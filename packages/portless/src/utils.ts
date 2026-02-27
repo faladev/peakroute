@@ -1,10 +1,38 @@
 import * as fs from "node:fs";
+import { IS_WINDOWS } from "./platform.js";
+
+/**
+ * Wrapper seguro para chmod que é no-op no Windows.
+ * PR #50 pattern: evita condicionais espalhadas pelo código.
+ */
+export function chmodSafe(path: string, mode: number): void {
+  if (IS_WINDOWS) return; // No-op no Windows
+  try {
+    fs.chmodSync(path, mode);
+  } catch {
+    // Non-fatal
+  }
+}
+
+/**
+ * Async version of chmodSafe.
+ */
+export async function chmodSafeAsync(path: string, mode: number): Promise<void> {
+  if (IS_WINDOWS) return;
+  try {
+    await fs.promises.chmod(path, mode);
+  } catch {
+    // Non-fatal
+  }
+}
 
 /**
  * When running under sudo, fix file ownership so the real user can
  * read/write the file later without sudo. No-op when not running as root.
+ * On Windows, this is a no-op since there's no concept of uid/gid.
  */
 export function fixOwnership(...paths: string[]): void {
+  if (IS_WINDOWS) return; // No-op no Windows - sem conceito de uid/gid
   const uid = process.env.SUDO_UID;
   const gid = process.env.SUDO_GID;
   if (!uid || process.getuid?.() !== 0) return;

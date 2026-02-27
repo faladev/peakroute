@@ -108,11 +108,20 @@ describe("isProxyRunning", () => {
   });
 });
 
+import { IS_WINDOWS } from "./platform.js";
+
 describe("resolveStateDir", () => {
-  it("returns system dir for privileged ports", () => {
-    expect(resolveStateDir(80)).toBe(SYSTEM_STATE_DIR);
-    expect(resolveStateDir(443)).toBe(SYSTEM_STATE_DIR);
-    expect(resolveStateDir(1023)).toBe(SYSTEM_STATE_DIR);
+  it("returns system dir for privileged ports on Unix", () => {
+    if (IS_WINDOWS) {
+      // No Windows, sempre retorna USER_STATE_DIR
+      expect(resolveStateDir(80)).toBe(USER_STATE_DIR);
+      expect(resolveStateDir(443)).toBe(USER_STATE_DIR);
+      expect(resolveStateDir(1023)).toBe(USER_STATE_DIR);
+    } else {
+      expect(resolveStateDir(80)).toBe(SYSTEM_STATE_DIR);
+      expect(resolveStateDir(443)).toBe(SYSTEM_STATE_DIR);
+      expect(resolveStateDir(1023)).toBe(SYSTEM_STATE_DIR);
+    }
   });
 
   it("returns user dir for non-privileged ports", () => {
@@ -121,6 +130,8 @@ describe("resolveStateDir", () => {
     expect(resolveStateDir(3000)).toBe(USER_STATE_DIR);
   });
 });
+
+import * as path from "node:path";
 
 describe("constants", () => {
   it("DEFAULT_PROXY_PORT is 1355", () => {
@@ -131,12 +142,16 @@ describe("constants", () => {
     expect(PRIVILEGED_PORT_THRESHOLD).toBe(1024);
   });
 
-  it("SYSTEM_STATE_DIR is /tmp/portless", () => {
-    expect(SYSTEM_STATE_DIR).toBe("/tmp/portless");
+  it("SYSTEM_STATE_DIR is temp dir on Windows, /tmp/portless on Unix", () => {
+    if (IS_WINDOWS) {
+      expect(SYSTEM_STATE_DIR).toBe(path.join(os.tmpdir(), "portless"));
+    } else {
+      expect(SYSTEM_STATE_DIR).toBe("/tmp/portless");
+    }
   });
 
   it("USER_STATE_DIR is in home directory", () => {
-    expect(USER_STATE_DIR).toBe(`${os.homedir()}/.portless`);
+    expect(USER_STATE_DIR).toBe(path.join(os.homedir(), ".portless"));
   });
 });
 

@@ -22,7 +22,8 @@
   },
   "os": [
     "darwin",
-    "linux"
+    "linux",
+    "win32"
   ],
   "scripts": {
     "build": "tsup",
@@ -45,11 +46,11 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/vercel-labs/portless.git"
+    "url": "https://github.com/faladev/peakroute.git"
   },
-  "homepage": "https://github.com/vercel-labs/portless#readme",
+  "homepage": "https://github.com/faladev/peakroute#readme",
   "bugs": {
-    "url": "https://github.com/vercel-labs/portless/issues"
+    "url": "https://github.com/faladev/peakroute/issues"
   },
   "dependencies": {
     "chalk": "^5.3.0"

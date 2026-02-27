@@ -6,6 +6,8 @@ import * as crypto from "node:crypto";
 import * as tls from "node:tls";
 import { execFileSync } from "node:child_process";
 import { createSNICallback, ensureCerts, isCATrusted, trustCA } from "./certs.js";
+import { IS_WINDOWS } from "./platform.js";
+import { IS_WINDOWS } from "./platform.js";
 
 /**
  * Return the signature algorithm string for a PEM cert file using openssl.
@@ -170,6 +172,11 @@ describe("ensureCerts", () => {
   });
 
   it("sets restrictive permissions on key files", () => {
+    // Skip on Windows because Windows doesn't support Unix-style file permissions
+    if (IS_WINDOWS) {
+      return;
+    }
+
     const result = ensureCerts(tmpDir);
 
     const caKeyPath = path.join(tmpDir, "ca-key.pem");

@@ -4,7 +4,8 @@ import * as crypto from "node:crypto";
 import * as tls from "node:tls";
 import { execFile as execFileCb, execFileSync } from "node:child_process";
 import { promisify } from "node:util";
-import { fixOwnership } from "./utils.js";
+import { fixOwnership, chmodSafe } from "./utils.js";
+import { IS_WINDOWS } from "./platform.js";
 
 /** How long the CA certificate is valid (10 years, in days). */
 const CA_VALIDITY_DAYS = 3650;
@@ -295,6 +296,8 @@ export function isCATrusted(stateDir: string): boolean {
     return isCATrustedMacOS(caCertPath);
   } else if (process.platform === "linux") {
     return isCATrustedLinux(stateDir);
+  } else if (IS_WINDOWS) {
+    return isCATrustedWindows(caCertPath);
   }
   return false;
 }
@@ -360,6 +363,32 @@ function isCATrustedLinux(stateDir: string): boolean {
     const ours = fs.readFileSync(path.join(stateDir, CA_CERT_FILE), "utf-8").trim();
     const installed = fs.readFileSync(systemCertPath, "utf-8").trim();
     return ours === installed;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Check if the CA is trusted on Windows.
+ * PR #50: Usa certutil para verificar o store do usuário.
+ */
+function isCATrustedWindows(caCertPath: string): boolean {
+  try {
+    // Extrai fingerprint SHA1 do certificado
+    const fingerprint = openssl(["x509", "-in", caCertPath, "-noout", "-fingerprint", "-sha1"])
+      .trim()
+      .replace(/^.*=/, "")
+      .replace(/:/g, "")
+      .toLowerCase();
+
+    // Query no store Root do usuário
+    const result = execFileSync("certutil", ["-store", "-user", "Root"], {
+      encoding: "utf-8",
+      timeout: 5000,
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+
+    return result.toLowerCase().includes(fingerprint);
   } catch {
     return false;
   }
@@ -572,12 +601,24 @@ export function createSNICallback(
 }
 
 /**
+ * Add the CA to the system trust store on Windows.
+ * PR #50: Usa certutil -addstore.
+ */
+function trustCAWindows(caCertPath: string): void {
+  execFileSync(
+    "certutil",
+    ["-addstore", "-user", "Root", caCertPath],
+    { stdio: "pipe", timeout: 30_000 }
+  );
+}
+
+/**
  * Add the portless CA to the system trust store.
  *
  * On macOS, adds to the login keychain (no sudo required -- the OS shows a
  * GUI authorization prompt to confirm). On Linux, copies to
  * /usr/local/share/ca-certificates and runs update-ca-certificates (requires
- * sudo).
+ * sudo). On Windows, uses certutil to add to the user's Root store.
  */
 export function trustCA(stateDir: string): { trusted: boolean; error?: string } {
   const caCertPath = path.join(stateDir, CA_CERT_FILE);
@@ -599,6 +640,9 @@ export function trustCA(stateDir: string): { trusted: boolean; error?: string } 
       fs.copyFileSync(caCertPath, dest);
       execFileSync("update-ca-certificates", [], { stdio: "pipe", timeout: 30_000 });
       return { trusted: true };
+    } else if (IS_WINDOWS) {
+      trustCAWindows(caCertPath);
+      return { trusted: true };
     }
     return { trusted: false, error: `Unsupported platform: ${process.platform}` };
   } catch (err: unknown) {
@@ -606,11 +650,14 @@ export function trustCA(stateDir: string): { trusted: boolean; error?: string } 
     if (
       message.includes("authorization") ||
       message.includes("permission") ||
-      message.includes("EACCES")
+      message.includes("EACCES") ||
+      message.includes("Access is denied") // Windows
     ) {
       return {
         trusted: false,
-        error: "Permission denied. Try: sudo portless trust",
+        error: IS_WINDOWS
+          ? "Permission denied. Try running as Administrator."
+          : "Permission denied. Try: sudo portless trust",
       };
     }
     return { trusted: false, error: message };

@@ -7,6 +7,15 @@ import * as path from "node:path";
 import * as readline from "node:readline";
 import { execSync, spawn } from "node:child_process";
 import { PORTLESS_HEADER } from "./proxy.js";
+import {
+  IS_WINDOWS,
+  SYSTEM_STATE_DIR,
+  USER_STATE_DIR,
+  PRIVILEGED_PORT_THRESHOLD,
+} from "./platform.js";
+
+// Re-export platform constants for backward compatibility
+export { SYSTEM_STATE_DIR, USER_STATE_DIR, PRIVILEGED_PORT_THRESHOLD } from "./platform.js";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -14,15 +23,6 @@ import { PORTLESS_HEADER } from "./proxy.js";
 
 /** Default proxy port. Uses an unprivileged port so sudo is not required. */
 export const DEFAULT_PROXY_PORT = 1355;
-
-/** Ports below this threshold require root/sudo to bind. */
-export const PRIVILEGED_PORT_THRESHOLD = 1024;
-
-/** System-wide state directory (used when proxy needs sudo). */
-export const SYSTEM_STATE_DIR = "/tmp/portless";
-
-/** Per-user state directory (used when proxy runs without sudo). */
-export const USER_STATE_DIR = path.join(os.homedir(), ".portless");
 
 /** Minimum app port when finding a free port. */
 const MIN_APP_PORT = 4000;
@@ -79,11 +79,16 @@ export function getDefaultPort(): number {
 /**
  * Determine the state directory for a given proxy port.
  * Privileged ports (< 1024) use the system dir (/tmp/portless) so both
- * root and non-root processes can share state.  Unprivileged ports use
+ * root and non-root processes can share state. Unprivileged ports use
  * the user's home directory (~/.portless).
+ *
+ * On Windows, always uses the user state directory since there's no
+ * privileged port concept.
  */
 export function resolveStateDir(port: number): string {
   if (process.env.PORTLESS_STATE_DIR) return process.env.PORTLESS_STATE_DIR;
+  // No Windows, não existe conceito de ports privilegiadas
+  if (IS_WINDOWS) return USER_STATE_DIR;
   return port < PRIVILEGED_PORT_THRESHOLD ? SYSTEM_STATE_DIR : USER_STATE_DIR;
 }
 
@@ -256,11 +261,47 @@ export function isProxyRunning(port: number, tls = false): Promise<boolean> {
 // ---------------------------------------------------------------------------
 
 /**
+ * Parseia o output do netstat no Windows para extrair o PID.
+ * Evita o bug de substring matching (ex: porta 80 encontrando 8080).
+ * PR #6: Parsing correto do formato "TCP    127.0.0.1:80    0.0.0.0:0    LISTENING    1234"
+ */
+function parsePidFromNetstat(output: string, port: number): number | null {
+  const lines = output.split("\n");
+  for (const line of lines) {
+    const parts = line.trim().split(/\s+/);
+    if (parts.length < 5) continue;
+    // parts[1] = local address (ex: "127.0.0.1:80" ou "[::]:80")
+    const localAddr = parts[1];
+    const addrMatch = localAddr.match(/:(\d+)$/);
+    if (!addrMatch) continue;
+    const foundPort = parseInt(addrMatch[1], 10);
+    if (foundPort === port && parts[3] === "LISTENING") {
+      const pid = parseInt(parts[4], 10);
+      if (!isNaN(pid)) return pid;
+    }
+  }
+  return null;
+}
+
+/**
  * Try to find the PID of a process listening on the given TCP port.
- * Uses lsof, which is available on macOS and most Linux distributions.
+ * Uses lsof on Unix (macOS/Linux) and netstat on Windows.
  * Returns null if the PID cannot be determined.
  */
 export function findPidOnPort(port: number): number | null {
+  if (IS_WINDOWS) {
+    try {
+      const output = execSync(`netstat -ano -p tcp`, {
+        encoding: "utf-8",
+        timeout: LSOF_TIMEOUT_MS,
+      });
+      return parsePidFromNetstat(output, port);
+    } catch {
+      return null;
+    }
+  }
+
+  // Unix (macOS/Linux)
   try {
     const output = execSync(`lsof -ti tcp:${port} -sTCP:LISTEN`, {
       encoding: "utf-8",
@@ -329,9 +370,11 @@ function augmentedPath(env: NodeJS.ProcessEnv | undefined): string {
 
 /**
  * Spawn a command with proper signal forwarding, error handling, and exit
- * code propagation. Uses /bin/sh so that shell scripts and version manager
- * shims are resolved. Prepends node_modules/.bin to PATH so local project
- * binaries (e.g. next, vite) are found.
+ * code propagation. Uses /bin/sh on Unix so that shell scripts and version manager
+ * shims are resolved. On Windows, uses shell mode to support .cmd files.
+ * Prepends node_modules/.bin to PATH so local project binaries (e.g. next, vite) are found.
+ *
+ * PR #6: shell: true no Windows para executar .cmd scripts (npm/pnpm).
  */
 export function spawnCommand(
   commandArgs: string[],
@@ -341,11 +384,26 @@ export function spawnCommand(
   }
 ): void {
   const env = { ...(options?.env ?? process.env), PATH: augmentedPath(options?.env) };
-  const shellCmd = commandArgs.map(shellEscape).join(" ");
-  const child = spawn("/bin/sh", ["-c", shellCmd], {
-    stdio: "inherit",
-    env,
-  });
+
+  let child: ReturnType<typeof spawn>;
+
+  if (IS_WINDOWS) {
+    // No Windows, executamos diretamente o comando com shell
+    // Isso permite executar .cmd scripts (npm, pnpm, etc)
+    child = spawn(commandArgs[0], commandArgs.slice(1), {
+      stdio: "inherit",
+      env,
+      shell: true,
+      windowsHide: true, // Esconde janela do console
+    });
+  } else {
+    // Unix: usa /bin/sh
+    const shellCmd = commandArgs.map(shellEscape).join(" ");
+    child = spawn("/bin/sh", ["-c", shellCmd], {
+      stdio: "inherit",
+      env,
+    });
+  }
 
   let exiting = false;
 
