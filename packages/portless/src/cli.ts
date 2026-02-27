@@ -193,7 +193,9 @@ async function stopProxy(store: RouteStore, proxyPort: number, tls: boolean): Pr
           console.log(chalk.green(`Killed process ${pid}. Proxy stopped.`));
         } catch (err: unknown) {
           if (isErrnoException(err) && err.code === "EPERM") {
-            console.error(chalk.red("Permission denied. The proxy was started with elevated permissions."));
+            console.error(
+              chalk.red("Permission denied. The proxy was started with elevated permissions.")
+            );
             if (IS_WINDOWS) {
               console.error(chalk.blue("Stop it with Administrator privileges:"));
               console.error(chalk.cyan("  portless proxy stop"));
@@ -277,7 +279,9 @@ async function stopProxy(store: RouteStore, proxyPort: number, tls: boolean): Pr
     console.log(chalk.green("Proxy stopped."));
   } catch (err: unknown) {
     if (isErrnoException(err) && err.code === "EPERM") {
-      console.error(chalk.red("Permission denied. The proxy was started with elevated permissions."));
+      console.error(
+        chalk.red("Permission denied. The proxy was started with elevated permissions.")
+      );
       if (IS_WINDOWS) {
         console.error(chalk.blue("Stop it with Administrator privileges:"));
         console.error(chalk.cyan("  portless proxy stop"));
@@ -728,7 +732,9 @@ ${chalk.bold("Usage: portless proxy <command>")}
     // PR #6: No Windows, ports < 1024 não precisam de elevação especial
     const needsRoot = !IS_WINDOWS && proxyPort < PRIVILEGED_PORT_THRESHOLD;
     if (needsRoot && (process.getuid?.() ?? -1) !== 0) {
-      console.error(chalk.red(`Error: Port ${proxyPort} requires ${IS_WINDOWS ? "Administrator" : "sudo"}.`));
+      console.error(
+        chalk.red(`Error: Port ${proxyPort} requires ${IS_WINDOWS ? "Administrator" : "sudo"}.`)
+      );
       if (!IS_WINDOWS) {
         console.error(chalk.blue("Either run with sudo:"));
         console.error(chalk.cyan("  sudo portless proxy start -p 80"));

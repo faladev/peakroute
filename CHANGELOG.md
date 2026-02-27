@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.5.0
+
+### Features
+
+- **Windows support**: Full Windows platform support including:
+  - Process management using `netstat` instead of `lsof`
+  - Certificate trust store integration via `certutil`
+  - Platform-specific error messages (Administrator vs sudo)
+  - Command spawning with Windows shell support
+  - Daemon process spawning with `windowsHide: true`
+  - Updated package.json OS field to include `win32`
+  - New `platform.ts` module for platform detection and constants
+
+### Changes
+
+- **Repository**: Changed repository URL from `vercel-labs/portless` to `faladev/peakroute`
+- **Author**: Updated author to `FalaDev`
+
 ## 0.4.2
 
 ### Bug Fixes

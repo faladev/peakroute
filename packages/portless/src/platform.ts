@@ -12,9 +12,7 @@ export const IS_LINUX = process.platform === "linux";
  * System-wide state directory (used when proxy needs elevated permissions).
  * On Windows, uses the temp directory since there's no privileged port concept.
  */
-export const SYSTEM_STATE_DIR = IS_WINDOWS
-  ? path.join(os.tmpdir(), "portless")
-  : "/tmp/portless";
+export const SYSTEM_STATE_DIR = IS_WINDOWS ? path.join(os.tmpdir(), "portless") : "/tmp/portless";
 
 /**
  * Per-user state directory (used when proxy runs without sudo).

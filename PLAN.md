@@ -9,6 +9,7 @@ Este plano implementa suporte completo ao Windows no portless usando como refer�
 **Status**: ✅ Concluído nas sessões anteriores
 
 ### Fontes Consultadas
+
 - PR #6 (vercel-labs/portless): Process management para Windows
 - PR #50 (vercel-labs/portless): Certificados e permissões para Windows
 - Context7: Documentação das APIs nativas do Bun
@@ -16,6 +17,7 @@ Este plano implementa suporte completo ao Windows no portless usando como refer�
 ### APIs Permitidas Identificadas
 
 **Node.js APIs (cross-platform)**:
+
 - `process.platform` - Detecção de plataforma
 - `os.tmpdir()` - Diretório temporário
 - `os.homedir()` - Diretório home do usuário
@@ -23,11 +25,13 @@ Este plano implementa suporte completo ao Windows no portless usando como refer�
 - `child_process.spawn/execFile` - Comandos do sistema
 
 **Comandos do Sistema Necessários**:
+
 - Windows: `netstat -ano -p tcp`, `certutil`, `taskkill`
 - macOS: `lsof`, `security`
 - Linux: `lsof`, `update-ca-certificates`
 
 **Bun APIs (para Fase 2)**:
+
 - `Bun.spawn()` - Substitui `child_process.spawn`
 - `Bun.listen()`/`Bun.connect()` - TCP sockets
 - `Bun.file()` - Leitura de arquivos otimizada
@@ -43,15 +47,14 @@ Este plano implementa suporte completo ao Windows no portless usando como refer�
 **Arquivo**: `packages/portless/src/platform.ts` (NOVO - CRIADO)
 
 **Implementação**:
+
 ```typescript
 export const IS_WINDOWS = process.platform === "win32";
 export const IS_MACOS = process.platform === "darwin";
 export const IS_LINUX = process.platform === "linux";
 
 /** Diretório de estado do sistema (temporário) */
-export const SYSTEM_STATE_DIR = IS_WINDOWS
-  ? path.join(os.tmpdir(), "portless")
-  : "/tmp/portless";
+export const SYSTEM_STATE_DIR = IS_WINDOWS ? path.join(os.tmpdir(), "portless") : "/tmp/portless";
 
 /** Diretório de estado por usuário */
 export const USER_STATE_DIR = path.join(os.homedir(), ".portless");
@@ -66,6 +69,7 @@ export const USER_STATE_DIR = path.join(os.homedir(), ".portless");
 **Arquivo**: `packages/portless/src/utils.ts` (MODIFICADO)
 
 **Implementação**:
+
 ```typescript
 /**
  * Wrapper seguro para chmod que é no-op no Windows.
@@ -116,6 +120,7 @@ export function fixOwnership(...paths: string[]): void {
 **Arquivo**: `packages/portless/src/cli-utils.ts` (MODIFICADO)
 
 **Implementação**:
+
 ```typescript
 /**
  * Parseia o output do netstat no Windows para extrair o PID.
@@ -181,6 +186,7 @@ export function findPidOnPort(port: number): number | null {
 **Arquivo**: `packages/portless/src/cli-utils.ts` (MODIFICADO)
 
 **Implementação**:
+
 ```typescript
 /**
  * Spawna um comando com suporte a Windows.
@@ -226,6 +232,7 @@ export function spawnCommand(
 **Arquivo**: `packages/portless/src/certs.ts` (MODIFICADO)
 
 **Implementação**:
+
 ```typescript
 /**
  * Verifica se o CA está confiado no Windows.
@@ -258,11 +265,10 @@ function isCATrustedWindows(caCertPath: string): boolean {
  * PR #50: Usa certutil -addstore.
  */
 function trustCAWindows(caCertPath: string): void {
-  execFileSync(
-    "certutil",
-    ["-addstore", "-user", "Root", caCertPath],
-    { stdio: "pipe", timeout: 30_000 }
-  );
+  execFileSync("certutil", ["-addstore", "-user", "Root", caCertPath], {
+    stdio: "pipe",
+    timeout: 30_000,
+  });
 }
 
 // Atualizar isCATrusted() para incluir Windows:
@@ -323,6 +329,7 @@ export function trustCA(stateDir: string): { trusted: boolean; error?: string } 
 **Arquivo**: `packages/portless/src/cli.ts` (MODIFICADO)
 
 **Implementação**:
+
 ```typescript
 const child = spawn(process.execPath, daemonArgs, {
   detached: true,
@@ -339,6 +346,7 @@ const child = spawn(process.execPath, daemonArgs, {
 **Arquivo**: `packages/portless/src/cli-utils.ts` (MODIFICADO)
 
 **Implementação**:
+
 ```typescript
 /**
  * Resolve o diretório de estado.
@@ -359,6 +367,7 @@ export function resolveStateDir(port: number): string {
 **Arquivo**: `packages/portless/src/cli.ts` (MODIFICADO)
 
 **Implementação**:
+
 ```typescript
 // PR #6: No Windows, ports < 1024 não precisam de elevação especial
 const needsSudo = !IS_WINDOWS && proxyPort < PRIVILEGED_PORT_THRESHOLD;
@@ -383,6 +392,7 @@ if (err.code === "EACCES") {
 **Arquivo**: `packages/portless/package.json` (MODIFICADO)
 
 **Mudanças**:
+
 ```json
 {
   "os": ["darwin", "linux", "win32"]
@@ -396,6 +406,7 @@ if (err.code === "EACCES") {
 **Arquivo**: `packages/portless/src/cli.ts` (MODIFICADO)
 
 **Mudanças**:
+
 - Substituir comandos Unix (`lsof`, `kill`) por equivalentes Windows quando aplicável
 - Adicionar `taskkill /F /PID <pid>` como alternativa no Windows
 - Adicionar `netstat -ano | findstr` como alternativa ao `lsof`
@@ -407,6 +418,7 @@ if (err.code === "EACCES") {
 ### 2.1 Pré-requisitos
 
 **Verificação**:
+
 - Bun instalado (`bun --version`)
 - Testes passando após Fase 1
 
@@ -415,6 +427,7 @@ if (err.code === "EACCES") {
 **Arquivo**: `packages/portless/src/cli-utils.ts` (MODIFICAR)
 
 **Implementação**:
+
 ```typescript
 // De:
 import { spawn } from "node:child_process";
@@ -436,6 +449,7 @@ await proc.exited;
 **Arquivo**: `packages/portless/src/certs.ts` (MODIFICAR)
 
 **Implementação**:
+
 ```typescript
 // De:
 const cert = fs.readFileSync(certPath);
@@ -451,6 +465,7 @@ const cert = await Bun.file(certPath).text();
 **Arquivo**: `packages/portless/package.json` (MODIFICAR)
 
 **Mudanças**:
+
 ```json
 {
   "scripts": {
@@ -466,6 +481,7 @@ const cert = await Bun.file(certPath).text();
 **Arquivo**: `bunfig.toml` (NOVO - root)
 
 **Conteúdo**:
+
 ```toml
 [install]
 exact = true
@@ -479,6 +495,7 @@ coverage = true
 ## Lista de Verificação (Checklist)
 
 ### Fase 1: Windows ✅ CONCLUÍDA
+
 - [x] Criar `packages/portless/src/platform.ts`
 - [x] Atualizar `utils.ts` com chmodSafe e fixOwnership
 - [x] Atualizar `cli-utils.ts` com findPidOnPort Windows
@@ -491,6 +508,7 @@ coverage = true
 - [ ] Executar testes em Windows (pendente - requer ambiente Windows)
 
 ### Fase 2: Bun
+
 - [ ] Instalar Bun
 - [ ] Substituir spawn por Bun.spawn
 - [ ] Substituir fs.readFileSync por Bun.file

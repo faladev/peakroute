@@ -605,11 +605,10 @@ export function createSNICallback(
  * PR #50: Usa certutil -addstore.
  */
 function trustCAWindows(caCertPath: string): void {
-  execFileSync(
-    "certutil",
-    ["-addstore", "-user", "Root", caCertPath],
-    { stdio: "pipe", timeout: 30_000 }
-  );
+  execFileSync("certutil", ["-addstore", "-user", "Root", caCertPath], {
+    stdio: "pipe",
+    timeout: 30_000,
+  });
 }
 
 /**
