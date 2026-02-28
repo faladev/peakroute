@@ -81,7 +81,7 @@ flowchart TD
 ```
 
 1. **Start the proxy** -- auto-starts when you run an app, or start explicitly with `peakroute proxy start`
-2. **Run apps** -- `peakroute<name> <command>` assigns a free port and registers with the proxy
+2. **Run apps** -- `peakroute <name> <command>` assigns a free port and registers with the proxy
 3. **Access via URL** -- `http://<name>.localhost:1355` routes through the proxy to your app
 
 Apps are assigned a random port (4000-4999) via the `PORT` and `HOST` environment variables. Most frameworks (Next.js, Express, Nuxt, etc.) respect these automatically. For frameworks that ignore `PORT` (Vite, Astro, React Router, Angular), peakroute auto-injects the correct `--port` and `--host` flags.
@@ -111,7 +111,7 @@ sudo peakroute trust
 ## Commands
 
 ```bash
-peakroute<name> <cmd> [args...]  # Run app at http://<name>.localhost:1355
+peakroute <name> <cmd> [args...]  # Run app at http://<name>.localhost:1355
 peakroute list                    # Show active routes
 peakroute trust                   # Add local CA to system trust store
 
