@@ -4,7 +4,7 @@ Replace port numbers with stable, named .localhost URLs. For humans and agents.
 
 ```diff
 - "dev": "next dev"              # http://localhost:3000
-+ "dev": "peakroutemyapp next dev"  # http://myapp.localhost:1355
++ "dev": "peakroute myapp next dev"  # http://myapp.localhost:1355
 ```
 
 ## Quick Start
@@ -14,14 +14,14 @@ Replace port numbers with stable, named .localhost URLs. For humans and agents.
 npm install -g peakroute
 
 # Start the proxy (once, no sudo needed)
-peakrouteproxy start
+peakroute proxy start
 
 # Run your app (auto-starts the proxy if needed)
-peakroutemyapp next dev
+peakroute myapp next dev
 # -> http://myapp.localhost:1355
 ```
 
-> The proxy auto-starts when you run an app. You can also start it explicitly with `peakrouteproxy start`.
+> The proxy auto-starts when you run an app. You can also start it explicitly with `peakroute proxy start`.
 
 ## Why
 
@@ -43,14 +43,14 @@ Peakroute fixes all of this by giving each dev server a stable, named `.localhos
 
 ```bash
 # Basic
-peakroutemyapp next dev
+peakroute myapp next dev
 # -> http://myapp.localhost:1355
 
 # Subdomains
-peakrouteapi.myapp npm start
+peakroute api.myapp npm start
 # -> http://api.myapp.localhost:1355
 
-peakroutedocs.myapp next dev
+peakroute docs.myapp next dev
 # -> http://docs.myapp.localhost:1355
 ```
 
@@ -59,32 +59,32 @@ peakroutedocs.myapp next dev
 ```json
 {
   "scripts": {
-    "dev": "peakroutemyapp next dev"
+    "dev": "peakroute myapp next dev"
   }
 }
 ```
 
-The proxy auto-starts when you run an app. Or start it explicitly: `peakrouteproxy start`.
+The proxy auto-starts when you run an app. Or start it explicitly: `peakroute proxy start`.
 
 ## How It Works
 
 ```mermaid
 flowchart TD
-    Browser["Browser\nmyapp.localhost:1355"]
-    Proxy["peakrouteproxy\n(port 1355)"]
-    App1[":4123\nmyapp"]
-    App2[":4567\napi"]
+    Browser["Browser<br/>myapp.localhost:1355"]
+    Proxy["peakroute proxy<br/>(port 1355)"]
+    App1[":4123<br/>myapp"]
+    App2[":4567<br/>api"]
 
     Browser -->|port 1355| Proxy
     Proxy --> App1
     Proxy --> App2
 ```
 
-1. **Start the proxy** -- auto-starts when you run an app, or start explicitly with `peakrouteproxy start`
+1. **Start the proxy** -- auto-starts when you run an app, or start explicitly with `peakroute proxy start`
 2. **Run apps** -- `peakroute<name> <command>` assigns a free port and registers with the proxy
 3. **Access via URL** -- `http://<name>.localhost:1355` routes through the proxy to your app
 
-Apps are assigned a random port (4000-4999) via the `PORT` and `HOST` environment variables. Most frameworks (Next.js, Express, Nuxt, etc.) respect these automatically. For frameworks that ignore `PORT` (Vite, Astro, React Router, Angular), peakrouteauto-injects the correct `--port` and `--host` flags.
+Apps are assigned a random port (4000-4999) via the `PORT` and `HOST` environment variables. Most frameworks (Next.js, Express, Nuxt, etc.) respect these automatically. For frameworks that ignore `PORT` (Vite, Astro, React Router, Angular), peakroute auto-injects the correct `--port` and `--host` flags.
 
 ## HTTP/2 + HTTPS
 
@@ -92,39 +92,39 @@ Enable HTTP/2 for faster dev server page loads. Browsers limit HTTP/1.1 to 6 con
 
 ```bash
 # Start with HTTPS/2 -- generates certs and trusts them automatically
-peakrouteproxy start --https
+peakroute proxy start --https
 
 # First run prompts for sudo once to add the CA to your system trust store.
 # After that, no prompts. No browser warnings.
 
 # Make it permanent (add to .bashrc / .zshrc)
 export PEAKROUTE_HTTPS=1
-peakrouteproxy start    # HTTPS by default now
+peakroute proxy start    # HTTPS by default now
 
 # Use your own certs (e.g., from mkcert)
-peakrouteproxy start --cert ./cert.pem --key ./key.pem
+peakroute proxy start --cert ./cert.pem --key ./key.pem
 
 # If you skipped sudo on first run, trust the CA later
-sudo peakroutetrust
+sudo peakroute trust
 ```
 
 ## Commands
 
 ```bash
 peakroute<name> <cmd> [args...]  # Run app at http://<name>.localhost:1355
-peakroutelist                    # Show active routes
-peakroutetrust                   # Add local CA to system trust store
+peakroute list                    # Show active routes
+peakroute trust                   # Add local CA to system trust store
 
-# Disable peakroute(run command directly)
+# Disable peakroute (run command directly)
 PEAKROUTE=0 pnpm dev              # Bypasses proxy, uses default port
 # Also accepts PEAKROUTE=skip
 
 # Proxy control
-peakrouteproxy start             # Start the proxy (port 1355, daemon)
-peakrouteproxy start --https     # Start with HTTP/2 + TLS
-peakrouteproxy start -p 80       # Start on port 80 (requires sudo)
-peakrouteproxy start --foreground  # Start in foreground (for debugging)
-peakrouteproxy stop              # Stop the proxy
+peakroute proxy start             # Start the proxy (port 1355, daemon)
+peakroute proxy start --https     # Start with HTTP/2 + TLS
+peakroute proxy start -p 80       # Start on port 80 (requires sudo)
+peakroute proxy start --foreground  # Start in foreground (for debugging)
+peakroute proxy stop              # Stop the proxy
 
 # Options
 -p, --port <number>              # Port for the proxy (default: 1355)
@@ -142,8 +142,8 @@ PEAKROUTE_HTTPS=1                 # Always enable HTTPS
 PEAKROUTE_STATE_DIR=<path>        # Override the state directory
 
 # Info
-peakroute--help                  # Show help
-peakroute--version               # Show version
+peakroute --help                  # Show help
+peakroute --version               # Show version
 ```
 
 ## State Directory
@@ -172,7 +172,7 @@ pnpm format           # Format all files with Prettier
 
 ## Proxying Between Peakroute Apps
 
-If your frontend dev server (e.g. Vite, webpack) proxies API requests to another peakroute app, make sure the proxy rewrites the `Host` header. Without this, the proxy sends the **original** Host header, causing peakrouteto route the request back to the frontend in an infinite loop.
+If your frontend dev server (e.g. Vite, webpack) proxies API requests to another peakroute app, make sure the proxy rewrites the `Host` header. Without this, the proxy sends the **original** Host header, causing peakroute to route the request back to the frontend in an infinite loop.
 
 **Vite** (`vite.config.ts`):
 
