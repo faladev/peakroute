@@ -66,10 +66,17 @@ jobs:
             echo "⏭️ Versão já publicada: $CURRENT_VERSION"
           fi
 
+      - name: Setup Node.js (for npm publish with OIDC)
+        if: steps.version-check.outputs.changed == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
       - name: Publish to npm
         if: steps.version-check.outputs.changed == 'true'
         working-directory: packages/peakroute
-        run: bun publish --provenance --access public
+        run: npm publish --provenance --access public
 
       - name: Create source zip
         if: steps.version-check.outputs.changed == 'true'
