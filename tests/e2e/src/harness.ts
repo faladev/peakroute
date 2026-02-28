@@ -119,7 +119,7 @@ export async function startApp(opts: StartAppOptions): Promise<E2EContext> {
 
   if (!fs.existsSync(CLI_PATH)) {
     throw new Error(
-      `Built CLI not found at ${CLI_PATH}. Run 'pnpm build' in packages/peakroute first.`
+      `Built CLI not found at ${CLI_PATH}. Run 'bun run build' in packages/peakroute first.`
     );
   }
 

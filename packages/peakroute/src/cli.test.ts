@@ -24,7 +24,9 @@ function run(args: string[], options?: { env?: Record<string, string | undefined
 describe("CLI", () => {
   beforeAll(() => {
     if (!fs.existsSync(CLI_PATH)) {
-      throw new Error(`Built CLI not found at ${CLI_PATH}. Run 'pnpm build' before running tests.`);
+      throw new Error(
+        `Built CLI not found at ${CLI_PATH}. Run 'bun run build' before running tests.`
+      );
     }
   });
 

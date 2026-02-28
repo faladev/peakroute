@@ -546,7 +546,7 @@ ${chalk.bold("Examples:")}
   peakroute proxy start --https        # Start with HTTPS/2 (faster page loads)
   peakroute myapp next dev             # -> http://myapp.localhost:1355
   peakroute myapp vite dev             # -> http://myapp.localhost:1355
-  peakroute api.myapp pnpm start       # -> http://api.myapp.localhost:1355
+  peakroute api.myapp bun start        # -> http://api.myapp.localhost:1355
 
 ${chalk.bold("In package.json:")}
   {
@@ -585,8 +585,8 @@ ${chalk.bold("Environment variables:")}
   PEAKROUTE=0 | PEAKROUTE=skip    Run command directly without proxy
 
 ${chalk.bold("Skip peakroute:")}
-  PEAKROUTE=0 pnpm dev           # Runs command directly without proxy
-  PEAKROUTE=skip pnpm dev        # Same as above
+  PEAKROUTE=0 bun dev              # Runs command directly without proxy
+  PEAKROUTE=skip bun dev           # Same as above
 `);
     process.exit(0);
   }

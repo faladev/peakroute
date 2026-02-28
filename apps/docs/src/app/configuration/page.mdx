@@ -14,22 +14,22 @@ Portless is configured through environment variables. No config files needed.
   </thead>
   <tbody>
     <tr>
-      <td>`PORTLESS_PORT`</td>
+      <td>`PEAKROUTE_PORT`</td>
       <td>Proxy port</td>
       <td>`1355`</td>
     </tr>
     <tr>
-      <td>`PORTLESS_HTTPS`</td>
+      <td>`PEAKROUTE_HTTPS`</td>
       <td>Set to `1` to always enable HTTPS</td>
       <td>off</td>
     </tr>
     <tr>
-      <td>`PORTLESS_STATE_DIR`</td>
+      <td>`PEAKROUTE_STATE_DIR`</td>
       <td>Override the state directory</td>
       <td>see below</td>
     </tr>
     <tr>
-      <td>`PORTLESS`</td>
+      <td>`PEAKROUTE`</td>
       <td>Set to `0` or `skip` to bypass the proxy</td>
       <td>enabled</td>
     </tr>
@@ -59,7 +59,7 @@ Portless stores state (routes, PID file, port file, TLS marker) in a directory t
   </tbody>
 </table>
 
-Override with `PORTLESS_STATE_DIR`.
+Override with `PEAKROUTE_STATE_DIR`.
 
 ## State files
 

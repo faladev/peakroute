@@ -10,7 +10,7 @@ Starts your command and maps it to `http://<name>.localhost:1355`. Auto-starts t
 
 ```bash
 peakroute myapp next dev
-peakroute api pnpm start
+peakroute api bun start
 peakroute docs.myapp next dev
 ```
 
@@ -64,7 +64,7 @@ peakroute proxy start
     </tr>
     <tr>
       <td>`--no-tls`</td>
-      <td>Disable HTTPS (overrides `PORTLESS_HTTPS`)</td>
+      <td>Disable HTTPS (overrides `PEAKROUTE_HTTPS`)</td>
     </tr>
     <tr>
       <td>`--foreground`</td>
@@ -82,10 +82,10 @@ peakroute proxy stop
 ## Bypass peakroute
 
 ```bash
-PORTLESS=0 pnpm dev
+PEAKROUTE=0 bun dev
 ```
 
-Runs the command directly without the proxy. Also accepts `PORTLESS=skip`.
+Runs the command directly without the proxy. Also accepts `PEAKROUTE=skip`.
 
 ## Info
 
