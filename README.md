@@ -47,7 +47,7 @@ portless myapp next dev
 # -> http://myapp.localhost:1355
 
 # Subdomains
-portless api.myapp pnpm start
+portless api.myapp npm start
 # -> http://api.myapp.localhost:1355
 
 portless docs.myapp next dev
