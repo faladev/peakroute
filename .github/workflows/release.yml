@@ -69,7 +69,7 @@ jobs:
       - name: Publish to npm (trusted publishing)
         if: steps.version-check.outputs.changed == 'true'
         working-directory: packages/peakroute
-        run: bun publish --access public
+        run: npm publish --access public
 
       - name: Create source zip
         if: steps.version-check.outputs.changed == 'true'
