@@ -8,3 +8,11 @@ coverage/
 .next/
 .env*
 ~.env.example
+
+# Ignore nested bun.lock files in workspace packages
+packages/**/bun.lock
+apps/**/bun.lock
+
+# Ignore nested bun.lock files (root bun.lock is sufficient)
+**/bun.lock
+!bun.lock
