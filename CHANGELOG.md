@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.5.1
+
+### Features
+
+- **Automated CI/CD pipeline**: Add GitHub Actions workflow for automated releases:
+  - Automatic version detection on push to main
+  - Automated npm publishing with OIDC trusted publishing
+  - Automatic GitHub Release creation with source artifacts
+  - Automatic git tag creation
+  - Release scripts for Unix (`release.sh`) and Windows (`release.ps1`)
+
 ## 0.5.0
 
 ### Features
