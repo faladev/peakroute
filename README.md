@@ -205,4 +205,4 @@ Peakroute detects this misconfiguration and responds with `508 Loop Detected` al
 ## Requirements
 
 - Node.js 20+
-- macOS or Linux
+- macOS, Linux, or Windows
