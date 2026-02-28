@@ -2,19 +2,25 @@
   "name": "portless-monorepo",
   "private": true,
   "type": "module",
+  "packageManager": "bun@1.3.10",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "build": "turbo build",
-    "dev": "turbo dev",
+    "build": "bunx turbo build",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "lint": "turbo lint",
-    "lint:fix": "turbo lint:fix",
-    "test": "turbo test",
-    "test:e2e": "turbo test:e2e",
-    "test:coverage": "turbo test:coverage",
-    "test:watch": "turbo test:watch",
-    "typecheck": "turbo typecheck",
-    "prepare": "husky"
+    "lint": "bunx turbo lint",
+    "lint:fix": "bunx turbo lint:fix",
+    "prepare": "husky",
+    "test": "bunx turbo test",
+    "test:coverage": "bunx turbo test:coverage",
+    "test:e2e": "bunx turbo test:e2e",
+    "test:watch": "bunx turbo test:watch",
+    "typecheck": "bunx turbo typecheck"
+  },
+  "dependencies": {
+    "portless": "workspace:*"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",

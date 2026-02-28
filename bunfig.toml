@@ -1,0 +1,17 @@
+[install]
+# Use the nearest package.json as the root
+peer = true
+
+[test]
+# Test configuration
+
+[run]
+# Run configuration
+
+# Define workspace packages
+[workspace]
+packages = [
+  "packages/*",
+  "apps/*",
+  "tests/*"
+]

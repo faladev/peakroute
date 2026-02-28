@@ -33,6 +33,7 @@
     "prepublishOnly": "bun run build",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "test:e2e": "echo 'No e2e tests defined yet'",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
   },
