@@ -2,7 +2,6 @@ import * as fs from "node:fs";
 import * as http from "node:http";
 import * as https from "node:https";
 import * as net from "node:net";
-import * as os from "node:os";
 import * as path from "node:path";
 import * as readline from "node:readline";
 import { execSync, spawn } from "node:child_process";

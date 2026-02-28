@@ -4,7 +4,7 @@ import * as crypto from "node:crypto";
 import * as tls from "node:tls";
 import { execFile as execFileCb, execFileSync } from "node:child_process";
 import { promisify } from "node:util";
-import { fixOwnership, chmodSafe } from "./utils.js";
+import { fixOwnership } from "./utils.js";
 import { IS_WINDOWS } from "./platform.js";
 
 /** How long the CA certificate is valid (10 years, in days). */

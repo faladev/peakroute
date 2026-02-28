@@ -7,7 +7,6 @@ import * as tls from "node:tls";
 import { execFileSync } from "node:child_process";
 import { createSNICallback, ensureCerts, isCATrusted, trustCA } from "./certs.js";
 import { IS_WINDOWS } from "./platform.js";
-import { IS_WINDOWS } from "./platform.js";
 
 /**
  * Return the signature algorithm string for a PEM cert file using openssl.
@@ -78,10 +77,13 @@ describe("ensureCerts", () => {
 
   it("CA cert has CA:TRUE basic constraint", () => {
     const result = ensureCerts(tmpDir);
-    const caCert = new crypto.X509Certificate(fs.readFileSync(result.caPath));
 
-    // The CA cert should be marked as a CA
-    expect(caCert.ca).toBe(true);
+    // Verify using openssl that CA:TRUE is present
+    // Note: X509Certificate.ca property is unreliable on Windows
+    const text = execFileSync("openssl", ["x509", "-in", result.caPath, "-noout", "-text"], {
+      encoding: "utf-8",
+    });
+    expect(text).toContain("CA:TRUE");
   });
 
   it("generates CA and server certs with SHA-256 signatures", () => {
