@@ -116,7 +116,7 @@ peakroute list                    # Show active routes
 peakroute trust                   # Add local CA to system trust store
 
 # Disable peakroute (run command directly)
-PEAKROUTE=0 pnpm dev              # Bypasses proxy, uses default port
+PEAKROUTE=0 bun dev              # Bypasses proxy, uses default port
 # Also accepts PEAKROUTE=skip
 
 # Proxy control
@@ -157,17 +157,17 @@ Override with the `PEAKROUTE_STATE_DIR` environment variable if needed.
 
 ## Development
 
-This repo is a pnpm workspace monorepo using [Turborepo](https://turbo.build). The publishable package lives in `packages/peakroute/`.
+This repo is a Bun workspace monorepo using [Turborepo](https://turbo.build). The publishable package lives in `packages/peakroute/`.
 
 ```bash
-pnpm install          # Install all dependencies
-pnpm build            # Build all packages
-pnpm test             # Run tests
-pnpm test:coverage    # Run tests with coverage
-pnpm test:watch       # Run tests in watch mode
-pnpm lint             # Lint all packages
-pnpm typecheck        # Type-check all packages
-pnpm format           # Format all files with Prettier
+bun install          # Install all dependencies
+bun run build        # Build all packages
+bun run test         # Run tests
+bun run test:coverage # Run tests with coverage
+bun run test:watch   # Run tests in watch mode
+bun run lint         # Lint all packages
+bun run typecheck    # Type-check all packages
+bun run format       # Format all files with Prettier
 ```
 
 ## Proxying Between Peakroute Apps
