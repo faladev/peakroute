@@ -389,12 +389,34 @@ export function spawnCommand(
   if (IS_WINDOWS) {
     // No Windows, executamos diretamente o comando com shell
     // Isso permite executar .cmd scripts (npm, pnpm, etc)
-    child = spawn(commandArgs[0], commandArgs.slice(1), {
-      stdio: "inherit",
-      env,
-      shell: true,
-      windowsHide: true, // Esconde janela do console
-    });
+    // Detecta se estamos rodando no PowerShell para usar o shell correto
+    // e garantir que o PATH do PowerShell (incluindo bun) esteja disponível
+    const isPowerShell = !!process.env.PSModulePath || process.env.TERM === "xterm-256color";
+    if (isPowerShell) {
+      // No PowerShell, precisamos garantir que o exit code seja propagado
+      // O PowerShell não propaga exit codes automaticamente como cmd.exe
+      const shellCmd = commandArgs
+        .map((a) => {
+          // Escape para PowerShell: sempre envolve em aspas se tiver caracteres especiais
+          if (/[\s"'()$;|&<>@`]/.test(a)) {
+            return `"${a.replace(/"/g, '`"')}"`;
+          }
+          return a;
+        })
+        .join(" ");
+      child = spawn("powershell.exe", ["-Command", shellCmd + "; exit $LASTEXITCODE"], {
+        stdio: "inherit",
+        env,
+        windowsHide: true,
+      });
+    } else {
+      child = spawn(commandArgs[0], commandArgs.slice(1), {
+        stdio: "inherit",
+        env,
+        shell: true,
+        windowsHide: true,
+      });
+    }
   } else {
     // Unix: usa /bin/sh
     const shellCmd = commandArgs.map(shellEscape).join(" ");

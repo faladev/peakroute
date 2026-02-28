@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.2
+
+### Bug Fixes
+
+- **PowerShell command execution**: Fix Bun and other tools not found when running in PowerShell. The CLI now detects PowerShell via `PSModulePath` and executes commands through `powershell.exe` instead of `cmd.exe`, ensuring tools installed via PowerShell (like Bun) are correctly resolved.
+- **Exit code propagation on Windows**: Fix exit codes not being propagated when running commands in PowerShell mode. Added `exit $LASTEXITCODE` to ensure child process exit codes are correctly returned to the parent.
+
 ## 0.5.1
 
 ### Features
