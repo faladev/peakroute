@@ -44,12 +44,6 @@ jobs:
         with:
           bun-version: latest
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          registry-url: "https://registry.npmjs.org"
-
       - name: Install dependencies
         run: bun ci
 
@@ -75,9 +69,7 @@ jobs:
       - name: Publish to npm
         if: steps.version-check.outputs.changed == 'true'
         working-directory: packages/peakroute
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: bun publish --provenance --access public
 
       - name: Create source zip
         if: steps.version-check.outputs.changed == 'true'
