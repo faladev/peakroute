@@ -224,8 +224,8 @@ describe("createProxyServer", () => {
     });
   });
 
-  describe("X-Portless header", () => {
-    it("includes X-Portless header on 404 responses", async () => {
+  describe("X-Peakroute header", () => {
+    it("includes X-Peakroute header on 404 responses", async () => {
       const routes: RouteInfo[] = [];
       const server = trackServer(
         createProxyServer({ getRoutes: () => routes, proxyPort: TEST_PROXY_PORT })
@@ -236,7 +236,7 @@ describe("createProxyServer", () => {
       expect(res.headers[PEAKROUTE_HEADER.toLowerCase()]).toBe("1");
     });
 
-    it("includes X-Portless header on 400 responses", async () => {
+    it("includes X-Peakroute header on 400 responses", async () => {
       const routes: RouteInfo[] = [];
       const server = trackServer(
         createProxyServer({ getRoutes: () => routes, proxyPort: TEST_PROXY_PORT })
@@ -249,7 +249,7 @@ describe("createProxyServer", () => {
   });
 
   describe("proxy loop detection", () => {
-    it("returns 508 when X-Portless-Hops reaches the threshold", async () => {
+    it("returns 508 when X-Peakroute-Hops reaches the threshold", async () => {
       const backend = trackServer(
         http.createServer((_req, res) => {
           res.writeHead(200);
@@ -349,7 +349,7 @@ describe("createProxyServer", () => {
       expect(res.body).toBe("ok");
     });
 
-    it("increments X-Portless-Hops when forwarding to backend", async () => {
+    it("increments X-Peakroute-Hops when forwarding to backend", async () => {
       let receivedHops = "";
       const backend = trackServer(
         http.createServer((req, res) => {
@@ -787,7 +787,7 @@ describe("createProxyServer with TLS (HTTP/2)", () => {
     expect(res.body).toContain("Not Found");
   });
 
-  it("includes X-Portless header on TLS responses", async () => {
+  it("includes X-Peakroute header on TLS responses", async () => {
     const routes: RouteInfo[] = [];
     const server = trackServer(
       createProxyServer({

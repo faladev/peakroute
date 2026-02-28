@@ -223,7 +223,7 @@ export async function findFreePort(
 
 /**
  * Check if a peakroute proxy is listening on the given port at 127.0.0.1.
- * Makes an HTTP(S) request and verifies the X-Portless response header to
+ * Makes an HTTP(S) request and verifies the X-Peakroute response header to
  * distinguish the peakroute proxy from unrelated services.
  *
  * When `tls` is true, uses HTTPS with certificate verification disabled

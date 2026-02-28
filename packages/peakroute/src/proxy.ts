@@ -5,7 +5,7 @@ import type { ProxyServerOptions } from "./types.js";
 import { escapeHtml, formatUrl } from "./utils.js";
 
 /** Response header used to identify a peakroute proxy (for health checks). */
-export const PEAKROUTE_HEADER = "X-Portless";
+export const PEAKROUTE_HEADER = "X-Peakroute";
 
 /**
  * HTTP/1.1 hop-by-hop headers that are forbidden in HTTP/2 responses.
