@@ -1,5 +1,11 @@
 # peakroute
 
+> [!NOTE]
+> **📌 Fork Notice:** This is a continuation fork of [vercel-labs/portless](https://github.com/vercel-labs/portless). We maintain and extend the project with additional features and platform support.
+
+> [!IMPORTANT]
+> **🪟 Windows Support Added!** This fork includes full Windows support alongside macOS and Linux. No platform limitations!
+
 Replace port numbers with stable, named .localhost URLs. For humans and agents.
 
 ```diff
