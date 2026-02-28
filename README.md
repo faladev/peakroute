@@ -1,3 +1,6 @@
+[![npm version](https://img.shields.io/npm/v/peakroute)](https://www.npmjs.com/package/peakroute) [![GitHub](https://img.shields.io/badge/GitHub-repository-black?logo=github)](https://github.com/faladev/peakroute)
+![Windows](https://img.shields.io/badge/Windows-supported-brightgreen?logo=windows) ![macOS](https://img.shields.io/badge/macOS-supported-black?logo=apple) ![Linux](https://img.shields.io/badge/Linux-supported-yellow?logo=linux)
+
 # peakroute
 
 > [!NOTE]
