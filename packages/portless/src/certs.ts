@@ -16,8 +16,8 @@ const SERVER_VALIDITY_DAYS = 365;
 /** Buffer (in ms) subtracted from expiry to trigger early regeneration. */
 const EXPIRY_BUFFER_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
-/** Common Name used for the portless local CA. */
-const CA_COMMON_NAME = "portless Local CA";
+/** Common Name used for the peakroute local CA. */
+const CA_COMMON_NAME = "peakroute Local CA";
 
 /** openssl command timeout (ms). */
 const OPENSSL_TIMEOUT_MS = 15_000;
@@ -286,7 +286,7 @@ export function ensureCerts(stateDir: string): {
 }
 
 /**
- * Check if the portless CA is already installed in the system trust store.
+ * Check if the peakroute CA is already installed in the system trust store.
  */
 export function isCATrusted(stateDir: string): boolean {
   const caCertPath = path.join(stateDir, CA_CERT_FILE);
@@ -355,7 +355,7 @@ function loginKeychainPath(): string {
  * Fedora/RHEL use /etc/pki/ca-trust/source/anchors/ which is not supported yet.
  */
 function isCATrustedLinux(stateDir: string): boolean {
-  const systemCertPath = `/usr/local/share/ca-certificates/portless-ca.crt`;
+  const systemCertPath = `/usr/local/share/ca-certificates/peakroute-ca.crt`;
   if (!fileExists(systemCertPath)) return false;
 
   // Compare our CA with the installed one
@@ -612,7 +612,7 @@ function trustCAWindows(caCertPath: string): void {
 }
 
 /**
- * Add the portless CA to the system trust store.
+ * Add the peakroute CA to the system trust store.
  *
  * On macOS, adds to the login keychain (no sudo required -- the OS shows a
  * GUI authorization prompt to confirm). On Linux, copies to
@@ -635,7 +635,7 @@ export function trustCA(stateDir: string): { trusted: boolean; error?: string } 
       );
       return { trusted: true };
     } else if (process.platform === "linux") {
-      const dest = "/usr/local/share/ca-certificates/portless-ca.crt";
+      const dest = "/usr/local/share/ca-certificates/peakroute-ca.crt";
       fs.copyFileSync(caCertPath, dest);
       execFileSync("update-ca-certificates", [], { stdio: "pipe", timeout: 30_000 });
       return { trusted: true };
@@ -656,7 +656,7 @@ export function trustCA(stateDir: string): { trusted: boolean; error?: string } 
         trusted: false,
         error: IS_WINDOWS
           ? "Permission denied. Try running as Administrator."
-          : "Permission denied. Try: sudo portless trust",
+          : "Permission denied. Try: sudo peakroute trust",
       };
     }
     return { trusted: false, error: message };

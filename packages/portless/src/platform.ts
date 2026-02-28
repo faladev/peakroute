@@ -12,12 +12,12 @@ export const IS_LINUX = process.platform === "linux";
  * System-wide state directory (used when proxy needs elevated permissions).
  * On Windows, uses the temp directory since there's no privileged port concept.
  */
-export const SYSTEM_STATE_DIR = IS_WINDOWS ? path.join(os.tmpdir(), "portless") : "/tmp/portless";
+export const SYSTEM_STATE_DIR = IS_WINDOWS ? path.join(os.tmpdir(), "peakroute") : "/tmp/peakroute";
 
 /**
  * Per-user state directory (used when proxy runs without sudo).
  */
-export const USER_STATE_DIR = path.join(os.homedir(), ".portless");
+export const USER_STATE_DIR = path.join(os.homedir(), ".peakroute");
 
 /**
  * Threshold for privileged ports. On Unix, ports < 1024 require root.

@@ -50,11 +50,11 @@ Portless stores state (routes, PID file, port file, TLS marker) in a directory t
   <tbody>
     <tr>
       <td>Port below 1024 (sudo)</td>
-      <td>`/tmp/portless`</td>
+      <td>`/tmp/peakroute`</td>
     </tr>
     <tr>
       <td>Port 1024+ (no sudo)</td>
-      <td>`~/.portless`</td>
+      <td>`~/.peakroute`</td>
     </tr>
   </tbody>
 </table>
@@ -96,4 +96,4 @@ Override with `PORTLESS_STATE_DIR`.
 
 ## Port assignment
 
-Apps get a random port in the 4000--4999 range. Portless sets `PORT` and `HOST` before running your command. Most frameworks respect `PORT` automatically. For frameworks that ignore it (Vite, Astro, React Router, Angular), portless auto-injects `--port` and `--host` flags.
+Apps get a random port in the 4000--4999 range. Portless sets `PORT` and `HOST` before running your command. Most frameworks respect `PORT` automatically. For frameworks that ignore it (Vite, Astro, React Router, Angular), peakroute auto-injects `--port` and `--host` flags.

@@ -16,8 +16,8 @@ Do not use emojis anywhere in this repository (code, comments, output, docs).
 
 ## Docs Updates
 
-When a change affects how humans or agents use portless (new/changed/removed commands, flags, behavior, or config), update all of these:
+When a change affects how humans or agents use peakroute (new/changed/removed commands, flags, behavior, or config), update all of these:
 
 1. `README.md` -- user-facing documentation
-2. `skills/portless/SKILL.md` -- agent skill for using portless
-3. `packages/portless/src/cli.ts` -- `--help` output
+2. `skills/peakroute/SKILL.md` -- agent skill for using peakroute
+3. `packages/peakroute/src/cli.ts` -- `--help` output

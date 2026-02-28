@@ -110,7 +110,7 @@ function ToolCallDisplay({
 }
 
 const SUGGESTIONS = [
-  "What is portless?",
+  "What is peakroute?",
   "How do I install it?",
   "What commands are available?",
   "How does HTTPS work?",
@@ -304,7 +304,7 @@ export function DocsChat({
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-800 shrink-0">
         <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-          portless Docs
+          peakroute Docs
         </span>
         <div className="flex items-center gap-3">
           {showMessages && (

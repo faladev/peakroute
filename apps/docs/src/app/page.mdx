@@ -4,13 +4,13 @@ Portless replaces port numbers with stable, named `.localhost` URLs for local de
 
 ```diff
 - "dev": "next dev"              # http://localhost:3000
-+ "dev": "portless myapp next dev"  # http://myapp.localhost:1355
++ "dev": "peakroute myapp next dev"  # http://myapp.localhost:1355
 ```
 
 ## Install
 
 ```bash
-npm install -g portless
+npm install -g peakroute
 ```
 
 > Install globally. Do not add as a project dependency or run via npx.
@@ -18,18 +18,18 @@ npm install -g portless
 ## Run your app
 
 ```bash
-portless myapp next dev
+peakroute myapp next dev
 # -> http://myapp.localhost:1355
 ```
 
-The proxy auto-starts when you run an app. A random port (4000--4999) is assigned via the `PORT` environment variable. Most frameworks (Next.js, Express, Nuxt, etc.) respect this automatically. For frameworks that ignore `PORT` (Vite, Astro, React Router, Angular), portless auto-injects `--port` and `--host` flags.
+The proxy auto-starts when you run an app. A random port (4000--4999) is assigned via the `PORT` environment variable. Most frameworks (Next.js, Express, Nuxt, etc.) respect this automatically. For frameworks that ignore `PORT` (Vite, Astro, React Router, Angular), peakroute auto-injects `--port` and `--host` flags.
 
 ## Use in package.json
 
 ```json
 {
   "scripts": {
-    "dev": "portless myapp next dev"
+    "dev": "peakroute myapp next dev"
   }
 }
 ```
@@ -39,10 +39,10 @@ The proxy auto-starts when you run an app. A random port (4000--4999) is assigne
 Organize services with subdomains:
 
 ```bash
-portless api.myapp pnpm start
+peakroute api.myapp pnpm start
 # -> http://api.myapp.localhost:1355
 
-portless docs.myapp next dev
+peakroute docs.myapp next dev
 # -> http://docs.myapp.localhost:1355
 ```
 

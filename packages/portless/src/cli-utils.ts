@@ -5,7 +5,7 @@ import * as net from "node:net";
 import * as path from "node:path";
 import * as readline from "node:readline";
 import { execSync, spawn } from "node:child_process";
-import { PORTLESS_HEADER } from "./proxy.js";
+import { PEAKROUTE_HEADER } from "./proxy.js";
 import {
   IS_WINDOWS,
   SYSTEM_STATE_DIR,
@@ -59,11 +59,11 @@ export const SIGNAL_CODES: Record<string, number> = {
 // ---------------------------------------------------------------------------
 
 /**
- * Return the effective default proxy port. Reads the PORTLESS_PORT env var
+ * Return the effective default proxy port. Reads the PEAKROUTE_PORT env var
  * first, falling back to DEFAULT_PROXY_PORT (1355).
  */
 export function getDefaultPort(): number {
-  const envPort = process.env.PORTLESS_PORT;
+  const envPort = process.env.PEAKROUTE_PORT;
   if (envPort) {
     const port = parseInt(envPort, 10);
     if (!isNaN(port) && port >= 1 && port <= 65535) return port;
@@ -77,15 +77,15 @@ export function getDefaultPort(): number {
 
 /**
  * Determine the state directory for a given proxy port.
- * Privileged ports (< 1024) use the system dir (/tmp/portless) so both
+ * Privileged ports (< 1024) use the system dir (/tmp/peakroute) so both
  * root and non-root processes can share state. Unprivileged ports use
- * the user's home directory (~/.portless).
+ * the user's home directory (~/.peakroute).
  *
  * On Windows, always uses the user state directory since there's no
  * privileged port concept.
  */
 export function resolveStateDir(port: number): string {
-  if (process.env.PORTLESS_STATE_DIR) return process.env.PORTLESS_STATE_DIR;
+  if (process.env.PEAKROUTE_STATE_DIR) return process.env.PEAKROUTE_STATE_DIR;
   // No Windows, não existe conceito de ports privilegiadas
   if (IS_WINDOWS) return USER_STATE_DIR;
   return port < PRIVILEGED_PORT_THRESHOLD ? SYSTEM_STATE_DIR : USER_STATE_DIR;
@@ -129,10 +129,10 @@ export function writeTlsMarker(dir: string, enabled: boolean): void {
 }
 
 /**
- * Return whether HTTPS mode is requested via the PORTLESS_HTTPS env var.
+ * Return whether HTTPS mode is requested via the PEAKROUTE_HTTPS env var.
  */
 export function isHttpsEnvEnabled(): boolean {
-  const val = process.env.PORTLESS_HTTPS;
+  const val = process.env.PEAKROUTE_HTTPS;
   return val === "1" || val === "true";
 }
 
@@ -143,14 +143,14 @@ export function isHttpsEnvEnabled(): boolean {
  */
 export async function discoverState(): Promise<{ dir: string; port: number; tls: boolean }> {
   // Env var override
-  if (process.env.PORTLESS_STATE_DIR) {
-    const dir = process.env.PORTLESS_STATE_DIR;
+  if (process.env.PEAKROUTE_STATE_DIR) {
+    const dir = process.env.PEAKROUTE_STATE_DIR;
     const port = readPortFromDir(dir) ?? getDefaultPort();
     const tls = readTlsMarker(dir);
     return { dir, port, tls };
   }
 
-  // Check user-level state first (~/.portless)
+  // Check user-level state first (~/.peakroute)
   const userPort = readPortFromDir(USER_STATE_DIR);
   if (userPort !== null) {
     const tls = readTlsMarker(USER_STATE_DIR);
@@ -159,7 +159,7 @@ export async function discoverState(): Promise<{ dir: string; port: number; tls:
     }
   }
 
-  // Check system-level state (/tmp/portless)
+  // Check system-level state (/tmp/peakroute)
   const systemPort = readPortFromDir(SYSTEM_STATE_DIR);
   if (systemPort !== null) {
     const tls = readTlsMarker(SYSTEM_STATE_DIR);
@@ -222,9 +222,9 @@ export async function findFreePort(
 }
 
 /**
- * Check if a portless proxy is listening on the given port at 127.0.0.1.
+ * Check if a peakroute proxy is listening on the given port at 127.0.0.1.
  * Makes an HTTP(S) request and verifies the X-Portless response header to
- * distinguish the portless proxy from unrelated services.
+ * distinguish the peakroute proxy from unrelated services.
  *
  * When `tls` is true, uses HTTPS with certificate verification disabled
  * (the proxy may use a self-signed or locally-trusted CA cert).
@@ -243,7 +243,7 @@ export function isProxyRunning(port: number, tls = false): Promise<boolean> {
       },
       (res) => {
         res.resume();
-        resolve(res.headers[PORTLESS_HEADER.toLowerCase()] === "1");
+        resolve(res.headers[PEAKROUTE_HEADER.toLowerCase()] === "1");
       }
     );
     req.on("error", () => resolve(false));
@@ -472,7 +472,7 @@ const FRAMEWORKS_NEEDING_PORT: Record<string, { strictPort: boolean }> = {
  * mutate the array in-place to append the correct CLI flags so the app
  * listens on the expected port and address.
  *
- * The portless proxy connects to 127.0.0.1 (IPv4), so we also inject
+ * The peakroute proxy connects to 127.0.0.1 (IPv4), so we also inject
  * `--host 127.0.0.1` to prevent frameworks from binding to IPv6 `::1`.
  */
 export function injectFrameworkFlags(commandArgs: string[], port: number): void {

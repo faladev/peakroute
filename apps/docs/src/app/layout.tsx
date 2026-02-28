@@ -9,7 +9,7 @@ import { cookies } from "next/headers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "portless",
+  title: "peakroute",
   description: "Replace port numbers with stable, named .localhost URLs. For humans and agents.",
 };
 
@@ -53,7 +53,7 @@ function Header() {
             </svg>
           </span>
           <Link href="/">
-            <span className={`${GeistPixelSquare.className} text-lg`}>portless</span>
+            <span className={`${GeistPixelSquare.className} text-lg`}>peakroute</span>
           </Link>
         </div>
         <nav className="flex items-center gap-4">
@@ -69,7 +69,7 @@ function Header() {
             <span>2k</span>
           </a>
           <a
-            href="https://www.npmjs.com/package/portless"
+            href="https://www.npmjs.com/package/peakroute"
             target="_blank"
             rel="noopener noreferrer"
             className="text-sm text-neutral-500 hover:text-neutral-900 transition-colors dark:text-neutral-400 dark:hover:text-neutral-100"

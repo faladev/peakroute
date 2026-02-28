@@ -6,7 +6,7 @@ import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const CLI_PATH = path.resolve(__dirname, "../../../packages/portless/dist/cli.js");
+const CLI_PATH = path.resolve(__dirname, "../../../packages/peakroute/dist/cli.js");
 const E2E_NODE_MODULES = path.resolve(__dirname, "../node_modules");
 const VENV_DIR = path.resolve(__dirname, "../.venv");
 

@@ -32,14 +32,14 @@ describe("CLI", () => {
     it("prints help and exits 0 with --help", () => {
       const { status, stdout } = run(["--help"]);
       expect(status).toBe(0);
-      expect(stdout).toContain("portless");
+      expect(stdout).toContain("peakroute");
       expect(stdout).toContain("Usage:");
       expect(stdout).toContain("Examples:");
       expect(stdout).toContain("proxy start");
       expect(stdout).toContain("--port");
       expect(stdout).toContain("-p");
       expect(stdout).toContain("--foreground");
-      expect(stdout).toContain("PORTLESS_STATE_DIR");
+      expect(stdout).toContain("PEAKROUTE_STATE_DIR");
     });
 
     it("prints help and exits 0 with -h", () => {
@@ -103,27 +103,27 @@ describe("CLI", () => {
     });
   });
 
-  describe("PORTLESS=0 bypass", () => {
-    it("runs command directly when PORTLESS=0 is set", () => {
+  describe("PEAKROUTE=0 bypass", () => {
+    it("runs command directly when PEAKROUTE=0 is set", () => {
       const { status, stdout } = run(["myapp", "echo", "hello"], {
-        env: { PORTLESS: "0" },
+        env: { PEAKROUTE: "0" },
       });
       expect(status).toBe(0);
       expect(stdout.trim()).toBe("hello");
     });
 
-    it("runs command directly when PORTLESS=skip is set", () => {
+    it("runs command directly when PEAKROUTE=skip is set", () => {
       const { status, stdout } = run(["myapp", "echo", "bypassed"], {
-        env: { PORTLESS: "skip" },
+        env: { PEAKROUTE: "skip" },
       });
       expect(status).toBe(0);
       expect(stdout.trim()).toBe("bypassed");
     });
 
-    it("does not bypass proxy commands when PORTLESS=0 is set", () => {
+    it("does not bypass proxy commands when PEAKROUTE=0 is set", () => {
       // 'proxy stop' should still be handled as a proxy command, not bypassed
       const { stderr } = run(["proxy", "stop"], {
-        env: { PORTLESS: "0" },
+        env: { PEAKROUTE: "0" },
       });
       // Should not try to run "stop" as a shell command
       expect(stderr).not.toContain("ENOENT");
@@ -131,7 +131,7 @@ describe("CLI", () => {
 
     it("passes through exit code from bypassed command", () => {
       const { status } = run(["myapp", "node", "-e", "process.exit(42)"], {
-        env: { PORTLESS: "0" },
+        env: { PEAKROUTE: "0" },
       });
       expect(status).toBe(42);
     });

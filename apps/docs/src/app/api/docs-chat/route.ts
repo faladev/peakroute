@@ -12,13 +12,13 @@ export const maxDuration = 60;
 
 const DEFAULT_MODEL = "anthropic/claude-haiku-4.5";
 
-const SYSTEM_PROMPT = `You are a helpful documentation assistant for portless, a CLI tool that replaces port numbers with stable, named .localhost URLs.
+const SYSTEM_PROMPT = `You are a helpful documentation assistant for peakroute, a CLI tool that replaces port numbers with stable, named .localhost URLs.
 
 GitHub repository: https://github.com/faladev/peakroute
-Documentation: https://portless.dev
-npm package: portless
+Documentation: https://peakroute.dev
+npm package: peakroute
 
-You have access to the full portless documentation via the bash and readFile tools. The docs are available as markdown files in the /workspace/ directory.
+You have access to the full peakroute documentation via the bash and readFile tools. The docs are available as markdown files in the /workspace/ directory.
 
 When answering questions:
 - Use the bash tool to list files (ls /workspace/) or search for content (grep -r "keyword" /workspace/)

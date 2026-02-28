@@ -1,27 +1,27 @@
-# portless
+# peakroute
 
 Replace port numbers with stable, named .localhost URLs. For humans and agents.
 
 ```diff
 - "dev": "next dev"              # http://localhost:3000
-+ "dev": "portless myapp next dev"  # http://myapp.localhost:1355
++ "dev": "peakroutemyapp next dev"  # http://myapp.localhost:1355
 ```
 
 ## Quick Start
 
 ```bash
 # Install
-npm install -g portless
+npm install -g peakroute
 
 # Start the proxy (once, no sudo needed)
-portless proxy start
+peakrouteproxy start
 
 # Run your app (auto-starts the proxy if needed)
-portless myapp next dev
+peakroutemyapp next dev
 # -> http://myapp.localhost:1355
 ```
 
-> The proxy auto-starts when you run an app. You can also start it explicitly with `portless proxy start`.
+> The proxy auto-starts when you run an app. You can also start it explicitly with `peakrouteproxy start`.
 
 ## Why
 
@@ -43,14 +43,14 @@ Portless fixes all of this by giving each dev server a stable, named `.localhost
 
 ```bash
 # Basic
-portless myapp next dev
+peakroutemyapp next dev
 # -> http://myapp.localhost:1355
 
 # Subdomains
-portless api.myapp npm start
+peakrouteapi.myapp npm start
 # -> http://api.myapp.localhost:1355
 
-portless docs.myapp next dev
+peakroutedocs.myapp next dev
 # -> http://docs.myapp.localhost:1355
 ```
 
@@ -59,19 +59,19 @@ portless docs.myapp next dev
 ```json
 {
   "scripts": {
-    "dev": "portless myapp next dev"
+    "dev": "peakroutemyapp next dev"
   }
 }
 ```
 
-The proxy auto-starts when you run an app. Or start it explicitly: `portless proxy start`.
+The proxy auto-starts when you run an app. Or start it explicitly: `peakrouteproxy start`.
 
 ## How It Works
 
 ```mermaid
 flowchart TD
     Browser["Browser\nmyapp.localhost:1355"]
-    Proxy["portless proxy\n(port 1355)"]
+    Proxy["peakrouteproxy\n(port 1355)"]
     App1[":4123\nmyapp"]
     App2[":4567\napi"]
 
@@ -80,11 +80,11 @@ flowchart TD
     Proxy --> App2
 ```
 
-1. **Start the proxy** -- auto-starts when you run an app, or start explicitly with `portless proxy start`
-2. **Run apps** -- `portless <name> <command>` assigns a free port and registers with the proxy
+1. **Start the proxy** -- auto-starts when you run an app, or start explicitly with `peakrouteproxy start`
+2. **Run apps** -- `peakroute<name> <command>` assigns a free port and registers with the proxy
 3. **Access via URL** -- `http://<name>.localhost:1355` routes through the proxy to your app
 
-Apps are assigned a random port (4000-4999) via the `PORT` and `HOST` environment variables. Most frameworks (Next.js, Express, Nuxt, etc.) respect these automatically. For frameworks that ignore `PORT` (Vite, Astro, React Router, Angular), portless auto-injects the correct `--port` and `--host` flags.
+Apps are assigned a random port (4000-4999) via the `PORT` and `HOST` environment variables. Most frameworks (Next.js, Express, Nuxt, etc.) respect these automatically. For frameworks that ignore `PORT` (Vite, Astro, React Router, Angular), peakrouteauto-injects the correct `--port` and `--host` flags.
 
 ## HTTP/2 + HTTPS
 
@@ -92,39 +92,39 @@ Enable HTTP/2 for faster dev server page loads. Browsers limit HTTP/1.1 to 6 con
 
 ```bash
 # Start with HTTPS/2 -- generates certs and trusts them automatically
-portless proxy start --https
+peakrouteproxy start --https
 
 # First run prompts for sudo once to add the CA to your system trust store.
 # After that, no prompts. No browser warnings.
 
 # Make it permanent (add to .bashrc / .zshrc)
-export PORTLESS_HTTPS=1
-portless proxy start    # HTTPS by default now
+export PEAKROUTE_HTTPS=1
+peakrouteproxy start    # HTTPS by default now
 
 # Use your own certs (e.g., from mkcert)
-portless proxy start --cert ./cert.pem --key ./key.pem
+peakrouteproxy start --cert ./cert.pem --key ./key.pem
 
 # If you skipped sudo on first run, trust the CA later
-sudo portless trust
+sudo peakroutetrust
 ```
 
 ## Commands
 
 ```bash
-portless <name> <cmd> [args...]  # Run app at http://<name>.localhost:1355
-portless list                    # Show active routes
-portless trust                   # Add local CA to system trust store
+peakroute<name> <cmd> [args...]  # Run app at http://<name>.localhost:1355
+peakroutelist                    # Show active routes
+peakroutetrust                   # Add local CA to system trust store
 
-# Disable portless (run command directly)
-PORTLESS=0 pnpm dev              # Bypasses proxy, uses default port
-# Also accepts PORTLESS=skip
+# Disable peakroute(run command directly)
+PEAKROUTE=0 pnpm dev              # Bypasses proxy, uses default port
+# Also accepts PEAKROUTE=skip
 
 # Proxy control
-portless proxy start             # Start the proxy (port 1355, daemon)
-portless proxy start --https     # Start with HTTP/2 + TLS
-portless proxy start -p 80       # Start on port 80 (requires sudo)
-portless proxy start --foreground  # Start in foreground (for debugging)
-portless proxy stop              # Stop the proxy
+peakrouteproxy start             # Start the proxy (port 1355, daemon)
+peakrouteproxy start --https     # Start with HTTP/2 + TLS
+peakrouteproxy start -p 80       # Start on port 80 (requires sudo)
+peakrouteproxy start --foreground  # Start in foreground (for debugging)
+peakrouteproxy stop              # Stop the proxy
 
 # Options
 -p, --port <number>              # Port for the proxy (default: 1355)
@@ -132,18 +132,18 @@ portless proxy stop              # Stop the proxy
 --https                          # Enable HTTP/2 + TLS with auto-generated certs
 --cert <path>                    # Use a custom TLS certificate (implies --https)
 --key <path>                     # Use a custom TLS private key (implies --https)
---no-tls                         # Disable HTTPS (overrides PORTLESS_HTTPS)
+--no-tls                         # Disable HTTPS (overrides PEAKROUTE_HTTPS)
 --foreground                     # Run proxy in foreground instead of daemon
 --force                          # Override a route registered by another process
 
 # Environment variables
-PORTLESS_PORT=<number>           # Override the default proxy port
-PORTLESS_HTTPS=1                 # Always enable HTTPS
-PORTLESS_STATE_DIR=<path>        # Override the state directory
+PEAKROUTE_PORT=<number>           # Override the default proxy port
+PEAKROUTE_HTTPS=1                 # Always enable HTTPS
+PEAKROUTE_STATE_DIR=<path>        # Override the state directory
 
 # Info
-portless --help                  # Show help
-portless --version               # Show version
+peakroute--help                  # Show help
+peakroute--version               # Show version
 ```
 
 ## State Directory
@@ -153,7 +153,7 @@ Portless stores its state (routes, PID file, port file) in a directory that depe
 - **Port < 1024** (sudo required): `/tmp/portless` -- shared between root and user processes
 - **Port >= 1024** (no sudo): `~/.portless` -- user-scoped, no root involvement
 
-Override with the `PORTLESS_STATE_DIR` environment variable if needed.
+Override with the `PEAKROUTE_STATE_DIR` environment variable if needed.
 
 ## Development
 
@@ -172,7 +172,7 @@ pnpm format           # Format all files with Prettier
 
 ## Proxying Between Portless Apps
 
-If your frontend dev server (e.g. Vite, webpack) proxies API requests to another portless app, make sure the proxy rewrites the `Host` header. Without this, the proxy sends the **original** Host header, causing portless to route the request back to the frontend in an infinite loop.
+If your frontend dev server (e.g. Vite, webpack) proxies API requests to another peakrouteapp, make sure the proxy rewrites the `Host` header. Without this, the proxy sends the **original** Host header, causing peakrouteto route the request back to the frontend in an infinite loop.
 
 **Vite** (`vite.config.ts`):
 

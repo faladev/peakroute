@@ -25,7 +25,7 @@ describe("ensureCerts", () => {
   let tmpDir: string;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "portless-certs-test-"));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "peakroute-certs-test-"));
   });
 
   afterEach(() => {
@@ -196,7 +196,7 @@ describe("createSNICallback", () => {
   let defaultKey: Buffer;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "portless-sni-test-"));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "peakroute-sni-test-"));
     const certs = ensureCerts(tmpDir);
     defaultCert = fs.readFileSync(certs.certPath);
     defaultKey = fs.readFileSync(certs.keyPath);
@@ -298,7 +298,7 @@ describe("isCATrusted", () => {
   let tmpDir: string;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "portless-trust-test-"));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "peakroute-trust-test-"));
   });
 
   afterEach(() => {
@@ -318,7 +318,7 @@ describe("trustCA", () => {
   let tmpDir: string;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "portless-trust-test-"));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "peakroute-trust-test-"));
   });
 
   afterEach(() => {

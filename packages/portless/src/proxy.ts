@@ -4,8 +4,8 @@ import * as net from "node:net";
 import type { ProxyServerOptions } from "./types.js";
 import { escapeHtml, formatUrl } from "./utils.js";
 
-/** Response header used to identify a portless proxy (for health checks). */
-export const PORTLESS_HEADER = "X-Portless";
+/** Response header used to identify a peakroute proxy (for health checks). */
+export const PEAKROUTE_HEADER = "X-Portless";
 
 /**
  * HTTP/1.1 hop-by-hop headers that are forbidden in HTTP/2 responses.
@@ -54,15 +54,15 @@ function buildForwardedHeaders(req: http.IncomingMessage, tls: boolean): Record<
 
 /**
  * Request header tracking how many times a request has passed through a
- * portless proxy. Used to detect forwarding loops (e.g. a frontend dev
- * server proxying back through portless without rewriting the Host header).
+ * peakroute proxy. Used to detect forwarding loops (e.g. a frontend dev
+ * server proxying back through peakroute without rewriting the Host header).
  */
-const PORTLESS_HOPS_HEADER = "x-portless-hops";
+const PEAKROUTE_HOPS_HEADER = "x-peakroute-hops";
 
 /**
- * Maximum number of times a request may pass through the portless proxy
+ * Maximum number of times a request may pass through the peakroute proxy
  * before it is rejected as a loop. Two hops is normal when a frontend
- * proxies API calls to a separate portless-managed backend; five gives
+ * proxies API calls to a separate peakroute-managed backend; five gives
  * comfortable headroom for multi-tier setups while catching loops quickly.
  */
 const MAX_PROXY_HOPS = 5;
@@ -87,7 +87,7 @@ export function createProxyServer(options: ProxyServerOptions): ProxyServer {
   const isTls = !!tls;
 
   const handleRequest = (req: http.IncomingMessage, res: http.ServerResponse) => {
-    res.setHeader(PORTLESS_HEADER, "1");
+    res.setHeader(PEAKROUTE_HEADER, "1");
 
     const routes = getRoutes();
     const host = getRequestHost(req).split(":")[0];
@@ -98,18 +98,18 @@ export function createProxyServer(options: ProxyServerOptions): ProxyServer {
       return;
     }
 
-    const hops = parseInt(req.headers[PORTLESS_HOPS_HEADER] as string, 10) || 0;
+    const hops = parseInt(req.headers[PEAKROUTE_HOPS_HEADER] as string, 10) || 0;
     if (hops >= MAX_PROXY_HOPS) {
       onError(
-        `Loop detected for ${host}: request has passed through portless ${hops} times. ` +
-          `This usually means a backend is proxying back through portless without rewriting ` +
+        `Loop detected for ${host}: request has passed through peakroute ${hops} times. ` +
+          `This usually means a backend is proxying back through peakroute without rewriting ` +
           `the Host header. If you use Vite/webpack proxy, set changeOrigin: true.`
       );
       res.writeHead(508, { "Content-Type": "text/plain" });
       res.end(
-        `Loop Detected: this request has passed through portless ${hops} times.\n\n` +
+        `Loop Detected: this request has passed through peakroute ${hops} times.\n\n` +
           "This usually means a dev server (Vite, webpack, etc.) is proxying\n" +
-          "requests back through portless without rewriting the Host header.\n\n" +
+          "requests back through peakroute without rewriting the Host header.\n\n" +
           "Fix: add changeOrigin: true to your proxy config, e.g.:\n\n" +
           "  proxy: {\n" +
           '    "/api": {\n' +
@@ -128,7 +128,7 @@ export function createProxyServer(options: ProxyServerOptions): ProxyServer {
       res.writeHead(404, { "Content-Type": "text/html" });
       res.end(`
         <html>
-          <head><title>portless - Not Found</title></head>
+          <head><title>peakroute - Not Found</title></head>
           <body style="font-family: system-ui; padding: 40px; max-width: 600px; margin: 0 auto;">
             <h1>Not Found</h1>
             <p>No app registered for <strong>${safeHost}</strong></p>
@@ -142,7 +142,7 @@ export function createProxyServer(options: ProxyServerOptions): ProxyServer {
             `
                 : "<p><em>No apps running.</em></p>"
             }
-            <p>Start an app with: <code>portless ${safeHost.replace(".localhost", "")} your-command</code></p>
+            <p>Start an app with: <code>peakroute ${safeHost.replace(".localhost", "")} your-command</code></p>
           </body>
         </html>
       `);
@@ -154,7 +154,7 @@ export function createProxyServer(options: ProxyServerOptions): ProxyServer {
     for (const [key, value] of Object.entries(forwardedHeaders)) {
       proxyReqHeaders[key] = value;
     }
-    proxyReqHeaders[PORTLESS_HOPS_HEADER] = String(hops + 1);
+    proxyReqHeaders[PEAKROUTE_HOPS_HEADER] = String(hops + 1);
     // Remove HTTP/2 pseudo-headers before forwarding to HTTP/1.1 backend
     for (const key of Object.keys(proxyReqHeaders)) {
       if (key.startsWith(":")) {
@@ -212,18 +212,18 @@ export function createProxyServer(options: ProxyServerOptions): ProxyServer {
   };
 
   const handleUpgrade = (req: http.IncomingMessage, socket: net.Socket, head: Buffer) => {
-    const hops = parseInt(req.headers[PORTLESS_HOPS_HEADER] as string, 10) || 0;
+    const hops = parseInt(req.headers[PEAKROUTE_HOPS_HEADER] as string, 10) || 0;
     if (hops >= MAX_PROXY_HOPS) {
       const host = getRequestHost(req).split(":")[0];
       onError(
-        `WebSocket loop detected for ${host}: request has passed through portless ${hops} times. ` +
+        `WebSocket loop detected for ${host}: request has passed through peakroute ${hops} times. ` +
           `Set changeOrigin: true in your proxy config.`
       );
       socket.end(
         "HTTP/1.1 508 Loop Detected\r\n" +
           "Content-Type: text/plain\r\n" +
           "\r\n" +
-          "Loop Detected: request has passed through portless too many times.\n" +
+          "Loop Detected: request has passed through peakroute too many times.\n" +
           "Add changeOrigin: true to your dev server proxy config.\n"
       );
       return;
@@ -243,7 +243,7 @@ export function createProxyServer(options: ProxyServerOptions): ProxyServer {
     for (const [key, value] of Object.entries(forwardedHeaders)) {
       proxyReqHeaders[key] = value;
     }
-    proxyReqHeaders[PORTLESS_HOPS_HEADER] = String(hops + 1);
+    proxyReqHeaders[PEAKROUTE_HOPS_HEADER] = String(hops + 1);
     // Remove HTTP/2 pseudo-headers before forwarding to HTTP/1.1 backend
     for (const key of Object.keys(proxyReqHeaders)) {
       if (key.startsWith(":")) {

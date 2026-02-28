@@ -2,7 +2,7 @@
 
 ## Visão Geral
 
-Este plano implementa suporte completo ao Windows no portless usando como referência os PRs #6 e #50 do repositório original, seguido de uma migração gradual para o runtime Bun.
+Este plano implementa suporte completo ao Windows no peakroute usando como referência os PRs #6 e #50 do repositório original, seguido de uma migração gradual para o runtime Bun.
 
 ## Fase 0: Documentação e Descoberta (DONE)
 
@@ -10,8 +10,8 @@ Este plano implementa suporte completo ao Windows no portless usando como refer�
 
 ### Fontes Consultadas
 
-- PR #6 (vercel-labs/portless): Process management para Windows
-- PR #50 (vercel-labs/portless): Certificados e permissões para Windows
+- PR #6 (vercel-labs/peakroute): Process management para Windows
+- PR #50 (vercel-labs/peakroute): Certificados e permissões para Windows
 - Context7: Documentação das APIs nativas do Bun
 
 ### APIs Permitidas Identificadas
@@ -44,7 +44,7 @@ Este plano implementa suporte completo ao Windows no portless usando como refer�
 
 ### 1.1 Constantes de Plataforma ✅
 
-**Arquivo**: `packages/portless/src/platform.ts` (NOVO - CRIADO)
+**Arquivo**: `packages/peakroute/src/platform.ts` (NOVO - CRIADO)
 
 **Implementação**:
 
@@ -54,10 +54,10 @@ export const IS_MACOS = process.platform === "darwin";
 export const IS_LINUX = process.platform === "linux";
 
 /** Diretório de estado do sistema (temporário) */
-export const SYSTEM_STATE_DIR = IS_WINDOWS ? path.join(os.tmpdir(), "portless") : "/tmp/portless";
+export const SYSTEM_STATE_DIR = IS_WINDOWS ? path.join(os.tmpdir(), "peakroute") : "/tmp/peakroute";
 
 /** Diretório de estado por usuário */
-export const USER_STATE_DIR = path.join(os.homedir(), ".portless");
+export const USER_STATE_DIR = path.join(os.homedir(), ".peakroute");
 ```
 
 **Referência**: PR #6, PR #50
@@ -66,7 +66,7 @@ export const USER_STATE_DIR = path.join(os.homedir(), ".portless");
 
 ### 1.2 Wrapper de Permissões (chmodSafe) ✅
 
-**Arquivo**: `packages/portless/src/utils.ts` (MODIFICADO)
+**Arquivo**: `packages/peakroute/src/utils.ts` (MODIFICADO)
 
 **Implementação**:
 
@@ -117,7 +117,7 @@ export function fixOwnership(...paths: string[]): void {
 
 ### 1.3 Gerenciamento de Processos (findPidOnPort) ✅
 
-**Arquivo**: `packages/portless/src/cli-utils.ts` (MODIFICADO)
+**Arquivo**: `packages/peakroute/src/cli-utils.ts` (MODIFICADO)
 
 **Implementação**:
 
@@ -183,7 +183,7 @@ export function findPidOnPort(port: number): number | null {
 
 ### 1.4 Spawn de Comandos (spawnCommand) ✅
 
-**Arquivo**: `packages/portless/src/cli-utils.ts` (MODIFICADO)
+**Arquivo**: `packages/peakroute/src/cli-utils.ts` (MODIFICADO)
 
 **Implementação**:
 
@@ -229,7 +229,7 @@ export function spawnCommand(
 
 ### 1.5 Trust Store de Certificados (certs.ts) ✅
 
-**Arquivo**: `packages/portless/src/certs.ts` (MODIFICADO)
+**Arquivo**: `packages/peakroute/src/certs.ts` (MODIFICADO)
 
 **Implementação**:
 
@@ -312,7 +312,7 @@ export function trustCA(stateDir: string): { trusted: boolean; error?: string } 
         trusted: false,
         error: IS_WINDOWS
           ? "Permission denied. Try running as Administrator."
-          : "Permission denied. Try: sudo portless trust",
+          : "Permission denied. Try: sudo peakroute trust",
       };
     }
     return { trusted: false, error: message };
@@ -326,7 +326,7 @@ export function trustCA(stateDir: string): { trusted: boolean; error?: string } 
 
 ### 1.6 Daemon Spawn (windowsHide) ✅
 
-**Arquivo**: `packages/portless/src/cli.ts` (MODIFICADO)
+**Arquivo**: `packages/peakroute/src/cli.ts` (MODIFICADO)
 
 **Implementação**:
 
@@ -343,7 +343,7 @@ const child = spawn(process.execPath, daemonArgs, {
 
 ### 1.7 Resolução de Diretório de Estado ✅
 
-**Arquivo**: `packages/portless/src/cli-utils.ts` (MODIFICADO)
+**Arquivo**: `packages/peakroute/src/cli-utils.ts` (MODIFICADO)
 
 **Implementação**:
 
@@ -364,7 +364,7 @@ export function resolveStateDir(port: number): string {
 
 ### 1.8 Detecção de Sudo/Permissões ✅
 
-**Arquivo**: `packages/portless/src/cli.ts` (MODIFICADO)
+**Arquivo**: `packages/peakroute/src/cli.ts` (MODIFICADO)
 
 **Implementação**:
 
@@ -380,7 +380,7 @@ if (err.code === "EACCES") {
   } else {
     console.error(chalk.red(`Permission denied for port ${proxyPort}.`));
     console.error(chalk.blue("Either run with sudo:"));
-    console.error(chalk.cyan("  sudo portless proxy start -p 80"));
+    console.error(chalk.cyan("  sudo peakroute proxy start -p 80"));
   }
 }
 ```
@@ -389,7 +389,7 @@ if (err.code === "EACCES") {
 
 ### 1.9 Atualizar package.json ✅
 
-**Arquivo**: `packages/portless/package.json` (MODIFICADO)
+**Arquivo**: `packages/peakroute/package.json` (MODIFICADO)
 
 **Mudanças**:
 
@@ -403,7 +403,7 @@ if (err.code === "EACCES") {
 
 ### 1.10 Atualizar Mensagens de Ajuda ✅
 
-**Arquivo**: `packages/portless/src/cli.ts` (MODIFICADO)
+**Arquivo**: `packages/peakroute/src/cli.ts` (MODIFICADO)
 
 **Mudanças**:
 
@@ -424,7 +424,7 @@ if (err.code === "EACCES") {
 
 ### 2.2 Substituir Spawn por Bun.spawn
 
-**Arquivo**: `packages/portless/src/cli-utils.ts` (MODIFICAR)
+**Arquivo**: `packages/peakroute/src/cli-utils.ts` (MODIFICAR)
 
 **Implementação**:
 
@@ -446,7 +446,7 @@ await proc.exited;
 
 ### 2.3 Substituir Leitura de Arquivos
 
-**Arquivo**: `packages/portless/src/certs.ts` (MODIFICAR)
+**Arquivo**: `packages/peakroute/src/certs.ts` (MODIFICAR)
 
 **Implementação**:
 
@@ -462,7 +462,7 @@ const cert = await Bun.file(certPath).text();
 
 ### 2.4 Atualizar Scripts do package.json
 
-**Arquivo**: `packages/portless/package.json` (MODIFICAR)
+**Arquivo**: `packages/peakroute/package.json` (MODIFICAR)
 
 **Mudanças**:
 
@@ -496,7 +496,7 @@ coverage = true
 
 ### Fase 1: Windows ✅ CONCLUÍDA
 
-- [x] Criar `packages/portless/src/platform.ts`
+- [x] Criar `packages/peakroute/src/platform.ts`
 - [x] Atualizar `utils.ts` com chmodSafe e fixOwnership
 - [x] Atualizar `cli-utils.ts` com findPidOnPort Windows
 - [x] Atualizar `cli-utils.ts` com spawnCommand Windows
@@ -520,7 +520,7 @@ coverage = true
 
 ## Referências
 
-1. PR #6: https://github.com/vercel-labs/portless/pull/6/files
-2. PR #50: https://github.com/vercel-labs/portless/pull/50/files
+1. PR #6: https://github.com/vercel-labs/peakroute/pull/6/files
+2. PR #50: https://github.com/vercel-labs/peakroute/pull/50/files
 3. Bun Docs: https://bun.sh/docs
 4. Node.js process.platform: https://nodejs.org/api/process.html#processplatform

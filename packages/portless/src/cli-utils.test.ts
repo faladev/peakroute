@@ -68,9 +68,9 @@ describe("isProxyRunning", () => {
     expect(result).toBe(false);
   });
 
-  it("returns true when a portless proxy is listening", async () => {
+  it("returns true when a peakroute proxy is listening", async () => {
     const server = http.createServer((_req, res) => {
-      res.setHeader("X-Portless", "1");
+      res.setHeader("X-Peakroute", "1");
       res.end("ok");
     });
     servers.push(server);
@@ -88,9 +88,9 @@ describe("isProxyRunning", () => {
     expect(result).toBe(true);
   });
 
-  it("returns false when a non-portless server is listening", async () => {
+  it("returns false when a non-peakroute server is listening", async () => {
     const server = http.createServer((_req, res) => {
-      res.end("not portless");
+      res.end("not peakroute");
     });
     servers.push(server);
 
@@ -142,16 +142,16 @@ describe("constants", () => {
     expect(PRIVILEGED_PORT_THRESHOLD).toBe(1024);
   });
 
-  it("SYSTEM_STATE_DIR is temp dir on Windows, /tmp/portless on Unix", () => {
+  it("SYSTEM_STATE_DIR is temp dir on Windows, /tmp/peakroute on Unix", () => {
     if (IS_WINDOWS) {
-      expect(SYSTEM_STATE_DIR).toBe(path.join(os.tmpdir(), "portless"));
+      expect(SYSTEM_STATE_DIR).toBe(path.join(os.tmpdir(), "peakroute"));
     } else {
-      expect(SYSTEM_STATE_DIR).toBe("/tmp/portless");
+      expect(SYSTEM_STATE_DIR).toBe("/tmp/peakroute");
     }
   });
 
   it("USER_STATE_DIR is in home directory", () => {
-    expect(USER_STATE_DIR).toBe(path.join(os.homedir(), ".portless"));
+    expect(USER_STATE_DIR).toBe(path.join(os.homedir(), ".peakroute"));
   });
 });
 
@@ -159,42 +159,42 @@ describe("getDefaultPort", () => {
   let originalEnv: string | undefined;
 
   beforeEach(() => {
-    originalEnv = process.env.PORTLESS_PORT;
+    originalEnv = process.env.PEAKROUTE_PORT;
   });
 
   afterEach(() => {
     if (originalEnv === undefined) {
-      delete process.env.PORTLESS_PORT;
+      delete process.env.PEAKROUTE_PORT;
     } else {
-      process.env.PORTLESS_PORT = originalEnv;
+      process.env.PEAKROUTE_PORT = originalEnv;
     }
   });
 
-  it("returns DEFAULT_PROXY_PORT when PORTLESS_PORT is not set", () => {
-    delete process.env.PORTLESS_PORT;
+  it("returns DEFAULT_PROXY_PORT when PEAKROUTE_PORT is not set", () => {
+    delete process.env.PEAKROUTE_PORT;
     expect(getDefaultPort()).toBe(DEFAULT_PROXY_PORT);
   });
 
-  it("returns PORTLESS_PORT when set to a valid port", () => {
-    process.env.PORTLESS_PORT = "8080";
+  it("returns PEAKROUTE_PORT when set to a valid port", () => {
+    process.env.PEAKROUTE_PORT = "8080";
     expect(getDefaultPort()).toBe(8080);
   });
 
-  it("returns DEFAULT_PROXY_PORT when PORTLESS_PORT is invalid", () => {
-    process.env.PORTLESS_PORT = "not-a-number";
+  it("returns DEFAULT_PROXY_PORT when PEAKROUTE_PORT is invalid", () => {
+    process.env.PEAKROUTE_PORT = "not-a-number";
     expect(getDefaultPort()).toBe(DEFAULT_PROXY_PORT);
   });
 
-  it("returns DEFAULT_PROXY_PORT when PORTLESS_PORT is out of range", () => {
-    process.env.PORTLESS_PORT = "0";
+  it("returns DEFAULT_PROXY_PORT when PEAKROUTE_PORT is out of range", () => {
+    process.env.PEAKROUTE_PORT = "0";
     expect(getDefaultPort()).toBe(DEFAULT_PROXY_PORT);
 
-    process.env.PORTLESS_PORT = "70000";
+    process.env.PEAKROUTE_PORT = "70000";
     expect(getDefaultPort()).toBe(DEFAULT_PROXY_PORT);
   });
 
-  it("returns DEFAULT_PROXY_PORT when PORTLESS_PORT is empty", () => {
-    process.env.PORTLESS_PORT = "";
+  it("returns DEFAULT_PROXY_PORT when PEAKROUTE_PORT is empty", () => {
+    process.env.PEAKROUTE_PORT = "";
     expect(getDefaultPort()).toBe(DEFAULT_PROXY_PORT);
   });
 });

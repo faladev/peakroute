@@ -3,21 +3,21 @@
 ## Run an app
 
 ```bash
-portless <name> <cmd> [args...]
+peakroute <name> <cmd> [args...]
 ```
 
 Starts your command and maps it to `http://<name>.localhost:1355`. Auto-starts the proxy if needed.
 
 ```bash
-portless myapp next dev
-portless api pnpm start
-portless docs.myapp next dev
+peakroute myapp next dev
+peakroute api pnpm start
+peakroute docs.myapp next dev
 ```
 
 ## List routes
 
 ```bash
-portless list
+peakroute list
 ```
 
 Shows active routes and their assigned ports.
@@ -25,17 +25,17 @@ Shows active routes and their assigned ports.
 ## Trust the CA
 
 ```bash
-sudo portless trust
+sudo peakroute trust
 ```
 
-Adds the portless certificate authority to your system trust store. Required once for HTTPS with auto-generated certs.
+Adds the peakroute certificate authority to your system trust store. Required once for HTTPS with auto-generated certs.
 
 ## Proxy control
 
 ### Start
 
 ```bash
-portless proxy start
+peakroute proxy start
 ```
 
 <table>
@@ -76,10 +76,10 @@ portless proxy start
 ### Stop
 
 ```bash
-portless proxy stop
+peakroute proxy stop
 ```
 
-## Bypass portless
+## Bypass peakroute
 
 ```bash
 PORTLESS=0 pnpm dev
@@ -90,6 +90,6 @@ Runs the command directly without the proxy. Also accepts `PORTLESS=skip`.
 ## Info
 
 ```bash
-portless --help
-portless --version
+peakroute --help
+peakroute --version
 ```
