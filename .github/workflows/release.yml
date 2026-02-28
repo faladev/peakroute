@@ -30,7 +30,7 @@ jobs:
     needs: [lint-and-build]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     permissions:
-      contents: write # Required to create git tags
+      contents: write # Required to create git tags and read repo
       id-token: write # Required for OIDC trusted publishing
     outputs:
       version_changed: ${{ steps.version-check.outputs.changed }}
@@ -72,10 +72,12 @@ jobs:
             echo "⏭️ Versão já publicada: $CURRENT_VERSION"
           fi
 
-      - name: Publish to npm (trusted publishing)
+      - name: Publish to npm
         if: steps.version-check.outputs.changed == 'true'
         working-directory: packages/peakroute
         run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create source zip
         if: steps.version-check.outputs.changed == 'true'
