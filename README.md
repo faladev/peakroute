@@ -37,7 +37,7 @@ Local dev with port numbers is fragile:
 - **Sharing URLs with teammates** -- "what port is that on?" becomes a Slack question
 - **Browser history is useless** -- your history for `localhost:3000` is a jumble of unrelated projects
 
-Portless fixes all of this by giving each dev server a stable, named `.localhost` URL that both humans and agents can rely on.
+Peakroute fixes all of this by giving each dev server a stable, named `.localhost` URL that both humans and agents can rely on.
 
 ## Usage
 
@@ -148,16 +148,16 @@ peakroute--version               # Show version
 
 ## State Directory
 
-Portless stores its state (routes, PID file, port file) in a directory that depends on the proxy port:
+Peakroute stores its state (routes, PID file, port file) in a directory that depends on the proxy port:
 
-- **Port < 1024** (sudo required): `/tmp/portless` -- shared between root and user processes
-- **Port >= 1024** (no sudo): `~/.portless` -- user-scoped, no root involvement
+- **Port < 1024** (sudo required): `/tmp/peakroute` -- shared between root and user processes
+- **Port >= 1024** (no sudo): `~/.peakroute` -- user-scoped, no root involvement
 
 Override with the `PEAKROUTE_STATE_DIR` environment variable if needed.
 
 ## Development
 
-This repo is a pnpm workspace monorepo using [Turborepo](https://turbo.build). The publishable package lives in `packages/portless/`.
+This repo is a pnpm workspace monorepo using [Turborepo](https://turbo.build). The publishable package lives in `packages/peakroute/`.
 
 ```bash
 pnpm install          # Install all dependencies
@@ -170,9 +170,9 @@ pnpm typecheck        # Type-check all packages
 pnpm format           # Format all files with Prettier
 ```
 
-## Proxying Between Portless Apps
+## Proxying Between Peakroute Apps
 
-If your frontend dev server (e.g. Vite, webpack) proxies API requests to another peakrouteapp, make sure the proxy rewrites the `Host` header. Without this, the proxy sends the **original** Host header, causing peakrouteto route the request back to the frontend in an infinite loop.
+If your frontend dev server (e.g. Vite, webpack) proxies API requests to another peakroute app, make sure the proxy rewrites the `Host` header. Without this, the proxy sends the **original** Host header, causing peakrouteto route the request back to the frontend in an infinite loop.
 
 **Vite** (`vite.config.ts`):
 
@@ -200,7 +200,7 @@ devServer: {
 }
 ```
 
-Portless detects this misconfiguration and responds with `508 Loop Detected` along with a message pointing to this fix.
+Peakroute detects this misconfiguration and responds with `508 Loop Detected` along with a message pointing to this fix.
 
 ## Requirements
 

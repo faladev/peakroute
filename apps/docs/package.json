@@ -1,10 +1,10 @@
 {
-  "name": "@portless/docs",
+  "name": "@peakroute/docs",
   "version": "0.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "portless portless next dev",
+    "dev": "peakroute docs next dev",
     "build": "next build",
     "start": "next start"
   },

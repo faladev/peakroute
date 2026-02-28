@@ -111,7 +111,7 @@ async function waitForApp(proxyPort: number, hostname: string, timeoutMs: number
 }
 
 /**
- * Start a portless-managed app and wait for it to be reachable
+ * Start a peakroute-managed app and wait for it to be reachable
  * through the proxy. Returns a context with a cleanup function.
  */
 export async function startApp(opts: StartAppOptions): Promise<E2EContext> {
@@ -119,14 +119,14 @@ export async function startApp(opts: StartAppOptions): Promise<E2EContext> {
 
   if (!fs.existsSync(CLI_PATH)) {
     throw new Error(
-      `Built CLI not found at ${CLI_PATH}. Run 'pnpm build' in packages/portless first.`
+      `Built CLI not found at ${CLI_PATH}. Run 'pnpm build' in packages/peakroute first.`
     );
   }
 
   // Ensure no stale proxy/app is occupying the port from a previous test run
   killPort(proxyPort);
 
-  const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), "portless-e2e-"));
+  const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), "peakroute-e2e-"));
 
   const resolvedCmd = [resolveBin(command[0], cwd), ...command.slice(1)];
 
@@ -134,8 +134,8 @@ export async function startApp(opts: StartAppOptions): Promise<E2EContext> {
     cwd,
     env: {
       ...process.env,
-      PORTLESS_PORT: proxyPort.toString(),
-      PORTLESS_STATE_DIR: stateDir,
+      PEAKROUTE_PORT: proxyPort.toString(),
+      PEAKROUTE_STATE_DIR: stateDir,
       NODE_PATH: E2E_NODE_MODULES,
       NO_COLOR: "1",
       ...extraEnv,
@@ -173,8 +173,8 @@ export async function startApp(opts: StartAppOptions): Promise<E2EContext> {
     spawnSync(process.execPath, [CLI_PATH, "proxy", "stop"], {
       env: {
         ...process.env,
-        PORTLESS_PORT: proxyPort.toString(),
-        PORTLESS_STATE_DIR: stateDir,
+        PEAKROUTE_PORT: proxyPort.toString(),
+        PEAKROUTE_STATE_DIR: stateDir,
         NO_COLOR: "1",
       },
       timeout: 10_000,

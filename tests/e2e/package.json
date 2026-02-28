@@ -1,5 +1,5 @@
 {
-  "name": "portless-e2e",
+  "name": "peakroute-e2e",
   "private": true,
   "type": "module",
   "scripts": {
