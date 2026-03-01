@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.4
+
+### Bug Fixes
+
+- **Missing README on npm**: Include README.md in package files so it appears on npm registry page.
+
 ## 0.5.3
 
 ### Bug Fixes
