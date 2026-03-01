@@ -5,7 +5,7 @@ declare const __VERSION__: string;
 import chalk from "chalk";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { spawn, spawnSync } from "node:child_process";
+import { spawn, spawnSync, execSync } from "node:child_process";
 import { createSNICallback, ensureCerts, isCATrusted, trustCA } from "./certs.js";
 import { createProxyServer } from "./proxy.js";
 import { fixOwnership, formatUrl, isErrnoException, parseHostname, chmodSafe } from "./utils.js";
@@ -42,6 +42,34 @@ const EXIT_TIMEOUT_MS = 2000;
 
 /** Timeout (ms) for the sudo spawn when auto-starting the proxy. */
 const SUDO_SPAWN_TIMEOUT_MS = 30_000;
+
+// ---------------------------------------------------------------------------
+// Process termination (cross-platform)
+// ---------------------------------------------------------------------------
+
+/**
+ * Kill a process by PID in a cross-platform way.
+ * On Windows, uses taskkill /F /T for reliable termination of detached processes.
+ * On Unix, uses SIGTERM and falls back to SIGKILL if needed.
+ */
+function killProcess(pid: number, force = false): void {
+  if (IS_WINDOWS) {
+    // Windows: use taskkill /F for force, /T to kill process tree
+    const args = force ? ["/F", "/T", "/PID", pid.toString()] : ["/T", "/PID", pid.toString()];
+    try {
+      execSync(`taskkill ${args.join(" ")}`, { windowsHide: true });
+    } catch {
+      // taskkill may fail if process already exited; ignore
+    }
+  } else {
+    // Unix: try SIGTERM first, then SIGKILL if force is true
+    try {
+      process.kill(pid, force ? "SIGKILL" : "SIGTERM");
+    } catch {
+      // Process may already be gone; ignore
+    }
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Proxy server lifecycle
@@ -184,7 +212,7 @@ async function stopProxy(store: RouteStore, proxyPort: number, tls: boolean): Pr
       const pid = findPidOnPort(proxyPort);
       if (pid !== null) {
         try {
-          process.kill(pid, "SIGTERM");
+          killProcess(pid);
           try {
             fs.unlinkSync(store.portFilePath);
           } catch {
@@ -269,7 +297,7 @@ async function stopProxy(store: RouteStore, proxyPort: number, tls: boolean): Pr
       return;
     }
 
-    process.kill(pid, "SIGTERM");
+    killProcess(pid);
     fs.unlinkSync(pidPath);
     try {
       fs.unlinkSync(store.portFilePath);

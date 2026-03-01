@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.3
+
+### Bug Fixes
+
+- **Windows process termination**: Add cross-platform `killProcess()` function that uses `taskkill` on Windows for reliable termination of detached proxy processes.
+- **Windows PATH handling**: Ensure essential Windows system directories (System32, PowerShell, WMI) are included in PATH when running from Git Bash or other shells.
+- **Bun detection on Windows**: Add Bun installation directories (`~/.bun/bin`, `%LOCALAPPDATA%/bun/bin`) to PATH when spawning commands on Windows. Fixes "'bun' is not recognized as a command" error when running via PowerShell.
+- **Windows command execution**: Refactor spawn to use `cmd.exe /c` directly instead of PowerShell detection, providing more reliable PATH inheritance and simpler command execution.
+
 ## 0.5.2
 
 ### Bug Fixes

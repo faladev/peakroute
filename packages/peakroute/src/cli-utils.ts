@@ -360,10 +360,52 @@ function collectBinPaths(cwd: string): string[] {
 
 /**
  * Build a PATH string with `node_modules/.bin` directories prepended.
+ * On Windows, ensures essential system directories are included for PowerShell
+ * and other system tools to be found.
  */
 function augmentedPath(env: NodeJS.ProcessEnv | undefined): string {
   const base = (env ?? process.env).PATH ?? "";
   const bins = collectBinPaths(process.cwd());
+
+  if (IS_WINDOWS) {
+    // Ensure essential Windows directories are in PATH
+    // This fixes issues when running from Git Bash, MSYS2, or other shells
+    // that may not include System32 in the PATH
+    const systemRoot = process.env.SystemRoot ?? "C:\\Windows";
+    const essentialPaths = [
+      path.join(systemRoot, "System32"),
+      path.join(systemRoot, "System32", "WindowsPowerShell", "v1.0"),
+      path.join(systemRoot, "System32", "wbem"), // for WMI tools
+    ];
+
+    // Ensure Bun is in PATH - common installation locations
+    const bunPaths = [
+      path.join(process.env.USERPROFILE ?? "C:\\Users\\" + process.env.USERNAME, ".bun", "bin"),
+      path.join(process.env.LOCALAPPDATA ?? "", "bun", "bin"),
+    ];
+
+    const pathEntries = base.split(path.delimiter).filter(Boolean);
+
+    // Add missing system paths
+    const missingSystemPaths = essentialPaths.filter((p) =>
+      pathEntries.every((entry) => entry.toLowerCase() !== p.toLowerCase())
+    );
+
+    // Add missing Bun paths
+    const missingBunPaths = bunPaths.filter((p) =>
+      pathEntries.every((entry) => entry.toLowerCase() !== p.toLowerCase())
+    );
+
+    const allMissing = [...missingSystemPaths, ...missingBunPaths];
+    if (allMissing.length > 0) {
+      const newPath = allMissing.join(path.delimiter) + path.delimiter + base;
+      if (bins.length > 0) {
+        return bins.join(path.delimiter) + path.delimiter + newPath;
+      }
+      return newPath;
+    }
+  }
+
   return bins.length > 0 ? bins.join(path.delimiter) + path.delimiter + base : base;
 }
 
@@ -387,36 +429,25 @@ export function spawnCommand(
   let child: ReturnType<typeof spawn>;
 
   if (IS_WINDOWS) {
-    // No Windows, executamos diretamente o comando com shell
-    // Isso permite executar .cmd scripts (npm, pnpm, etc)
-    // Detecta se estamos rodando no PowerShell para usar o shell correto
-    // e garantir que o PATH do PowerShell (incluindo bun) esteja disponível
-    const isPowerShell = !!process.env.PSModulePath || process.env.TERM === "xterm-256color";
-    if (isPowerShell) {
-      // No PowerShell, precisamos garantir que o exit code seja propagado
-      // O PowerShell não propaga exit codes automaticamente como cmd.exe
-      const shellCmd = commandArgs
-        .map((a) => {
-          // Escape para PowerShell: sempre envolve em aspas se tiver caracteres especiais
-          if (/[\s"'()$;|&<>@`]/.test(a)) {
-            return `"${a.replace(/"/g, '`"')}"`;
-          }
-          return a;
-        })
-        .join(" ");
-      child = spawn("powershell.exe", ["-Command", shellCmd + "; exit $LASTEXITCODE"], {
-        stdio: "inherit",
-        env,
-        windowsHide: true,
-      });
-    } else {
-      child = spawn(commandArgs[0], commandArgs.slice(1), {
-        stdio: "inherit",
-        env,
-        shell: true,
-        windowsHide: true,
-      });
-    }
+    // Windows: use cmd.exe /c para executar comandos.
+    // Usamos cmd.exe diretamente em vez de shell: true para ter mais controle
+    // e garantir que o PATH seja herdado corretamente do processo pai.
+    // Isso resolve problemas com ferramentas como bun que podem estar no PATH
+    // do usuário mas não no PATH padrão do sistema.
+    const shellCmd = commandArgs
+      .map((a) => {
+        // Escape para cmd.exe: envolve em aspas se tiver espaços ou caracteres especiais
+        if (/[\s"&<>|^]/.test(a)) {
+          return `"${a.replace(/"/g, '""')}"`;
+        }
+        return a;
+      })
+      .join(" ");
+    child = spawn("cmd.exe", ["/c", shellCmd], {
+      stdio: "inherit",
+      env,
+      windowsHide: true,
+    });
   } else {
     // Unix: usa /bin/sh
     const shellCmd = commandArgs.map(shellEscape).join(" ");
