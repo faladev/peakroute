@@ -15,29 +15,50 @@ const VENV_DIR = path.resolve(__dirname, "../.venv");
 // when adding a new test.
 
 /** Path to the Python binary inside the e2e venv. */
-export const PYTHON_BIN = path.join(VENV_DIR, "bin", "python3");
+export const PYTHON_BIN =
+  process.platform === "win32"
+    ? path.join(VENV_DIR, "Scripts", "python.exe")
+    : path.join(VENV_DIR, "bin", "python3");
+
+function killPidSafe(pid: number): void {
+  try {
+    if (process.platform === "win32") {
+      execSync(`taskkill /F /PID ${pid}`, { windowsHide: true });
+    } else {
+      process.kill(pid, "SIGTERM");
+    }
+  } catch {
+    // already dead
+  }
+}
+
+function parsePidsFromOutput(lines: string[], isWindows: boolean): number[] {
+  return lines.flatMap((line) => {
+    const raw = isWindows ? (line.trim().split(/\s+/).pop() ?? "") : line.trim();
+    const pid = Number.parseInt(raw, 10);
+    return Number.isNaN(pid) || pid === process.pid ? [] : [pid];
+  });
+}
 
 /** Kill any process listening on the given TCP port (skips our own PID). */
 function killPort(port: number): void {
+  const isWindows = process.platform === "win32";
+  let output: string;
   try {
-    const pids = execSync(`lsof -ti tcp:${port}`, {
-      encoding: "utf-8",
-      timeout: 5000,
-    }).trim();
-    if (pids) {
-      const myPid = process.pid;
-      for (const raw of pids.split("\n")) {
-        const pid = parseInt(raw, 10);
-        if (isNaN(pid) || pid === myPid) continue;
-        try {
-          process.kill(pid, "SIGTERM");
-        } catch {
-          // already dead
-        }
-      }
-    }
+    output = isWindows
+      ? execSync(`netstat -ano | findstr ":${port} " | findstr "LISTENING"`, {
+          encoding: "utf-8",
+          timeout: 5000,
+          shell: "cmd.exe",
+        }).trim()
+      : execSync(`lsof -ti tcp:${port}`, { encoding: "utf-8", timeout: 5000 }).trim();
   } catch {
-    // no process on port
+    return; // no process on port
+  }
+
+  const pids = parsePidsFromOutput(output.split("\n"), isWindows);
+  for (const pid of pids) {
+    killPidSafe(pid);
   }
 }
 
