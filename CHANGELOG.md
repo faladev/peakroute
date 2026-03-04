@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.5.5
+
+### Improvements
+
+- **E2E test harness**: Add Python setup script for cross-platform virtual environment setup in end-to-end tests.
+- **Cross-platform formatting**: Enforce LF line endings via `.prettierrc` and `.gitattributes` for consistent formatting across Windows, macOS, and Linux.
+
+### Bug Fixes
+
+- **CI Windows paths**: Fix path separators in GitHub Actions workflow for Windows e2e test setup.
+
 ## 0.5.4
 
 ### Bug Fixes
