@@ -8,10 +8,11 @@ on:
 
 jobs:
   ci:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
         node-version: [20, 22]
 
     steps:
@@ -25,6 +26,10 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
       - run: bun ci
 
       - run: bun run format:check
@@ -36,5 +41,15 @@ jobs:
       - run: bun run build
 
       - run: bun run test
+
+      - name: Set up Python venv for e2e tests (Unix)
+        if: runner.os != 'Windows'
+        run: python3 -m venv tests/e2e/.venv && tests/e2e/.venv/bin/pip install -r tests/e2e/requirements.txt
+        shell: bash
+
+      - name: Set up Python venv for e2e tests (Windows)
+        if: runner.os == 'Windows'
+        run: python -m venv tests\e2e\.venv && tests\e2e\.venv\Scripts\pip.exe install -r tests\e2e\requirements.txt
+        shell: cmd
 
       - run: bun run test:e2e

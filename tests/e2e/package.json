@@ -5,7 +5,7 @@
   "scripts": {
     "test": "echo 'use test:e2e instead'",
     "test:e2e": "vitest run",
-    "setup:python": "python3 -m venv .venv && .venv/bin/pip install -r requirements.txt"
+    "setup:python": "node scripts/setup-python.js"
   },
   "devDependencies": {
     "@angular/build": "^21.1.4",
