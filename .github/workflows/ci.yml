@@ -49,7 +49,7 @@ jobs:
 
       - name: Set up Python venv for e2e tests (Windows)
         if: runner.os == 'Windows'
-        run: python -m venv tests/e2e/.venv && tests/e2e/.venv/Scripts/pip install -r tests/e2e/requirements.txt
+        run: python -m venv tests\e2e\.venv && tests\e2e\.venv\Scripts\pip.exe install -r tests\e2e\requirements.txt
         shell: cmd
 
       - run: bun run test:e2e
