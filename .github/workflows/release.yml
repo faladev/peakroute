@@ -5,29 +5,30 @@ on:
     branches: [main]
 
 jobs:
-  lint-and-build:
+  wait-for-ci:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Wait for CI to pass
+        uses: lewagon/wait-on-check-action@v1.3.4
         with:
-          bun-version: latest
+          ref: ${{ github.ref }}
+          check-name: "CI"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 10
+          allowed-conclusions: success
 
-      - name: Install dependencies
-        run: bun ci
-
-      - name: Run tests
-        run: bun run test
-
-      - name: Build package
-        run: bun run build
+      - name: Wait for E2E GitBash to pass
+        uses: lewagon/wait-on-check-action@v1.3.4
+        with:
+          ref: ${{ github.ref }}
+          check-name: "E2E Tests (Git Bash)"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 10
+          allowed-conclusions: success
 
   check-and-publish:
     runs-on: ubuntu-latest
-    needs: [lint-and-build]
+    needs: [wait-for-ci]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     permissions:
       contents: write # Required to create git tags and read repo
@@ -66,10 +67,10 @@ jobs:
           echo "published=$PUBLISHED_VERSION" >> $GITHUB_OUTPUT
           if [ "$CURRENT_VERSION" != "$PUBLISHED_VERSION" ]; then
             echo "changed=true" >> $GITHUB_OUTPUT
-            echo "✅ Nova versão detectada: $PUBLISHED_VERSION → $CURRENT_VERSION"
+            echo "✅ New version detected: $PUBLISHED_VERSION → $CURRENT_VERSION"
           else
             echo "changed=false" >> $GITHUB_OUTPUT
-            echo "⏭️ Versão já publicada: $CURRENT_VERSION"
+            echo "⏭️ Version already published: $CURRENT_VERSION"
           fi
 
       - name: Update npm for trusted publishing
@@ -100,13 +101,33 @@ jobs:
           body: |
             ## peakroute v${{ steps.version-check.outputs.current }}
 
-            ### Instalação via npm
+            ### Installation
+
+            **npm:**
             ```bash
             npm install -g peakroute@${{ steps.version-check.outputs.current }}
             ```
 
+            **bun:**
+            ```bash
+            bun add -g peakroute@${{ steps.version-check.outputs.current }}
+            ```
+
+            **yarn:**
+            ```bash
+            yarn global add peakroute@${{ steps.version-check.outputs.current }}
+            ```
+
+            **pnpm:**
+            ```bash
+            pnpm add -g peakroute@${{ steps.version-check.outputs.current }}
+            ```
+
             ### Download
-            O código fonte está disponível no artefato `peakroute-${{ steps.version-check.outputs.current }}-source.zip` abaixo.
+            Source code is available in the artifact `peakroute-${{ steps.version-check.outputs.current }}-source.zip` below.
+
+            ### Changelog
+            See the full changelog at [CHANGELOG.md](https://github.com/faladev/peakroute/blob/main/CHANGELOG.md).
           files: |
             peakroute-${{ steps.version-check.outputs.current }}-source.zip
           draft: false

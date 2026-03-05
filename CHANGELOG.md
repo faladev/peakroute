@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.7
+
+### Improvements
+
+- **CI/OpenSSL on Windows**: Configure OpenSSL path on Windows runners to ensure certificate generation tests work reliably.
+- **CI/Release dependency**: Make release workflow wait for CI and E2E Git Bash workflows to pass before publishing to npm.
+
 ## 0.5.6
 
 ### Improvements
