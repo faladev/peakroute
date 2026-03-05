@@ -30,6 +30,17 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Setup OpenSSL on Windows
+        if: runner.os == 'Windows'
+        run: |
+          # Add OpenSSL to PATH if available
+          if (Test-Path "C:\Program Files\OpenSSL-Win64\bin") {
+            echo "C:\Program Files\OpenSSL-Win64\bin" >> $env:GITHUB_PATH
+          }
+          # Verify OpenSSL is available
+          openssl version
+        shell: pwsh
+
       - run: bun ci
 
       - run: bun run format:check
