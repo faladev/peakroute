@@ -1,0 +1,53 @@
+name: E2E Tests (Git Bash)
+
+# Tests peakroute functionality specifically in Git Bash on Windows.
+# This catches path conversion issues where Git Bash converts /F to F:/
+# when used in shell commands (common with taskkill and other Windows CLI tools).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  e2e-gitbash:
+    runs-on: windows-latest
+    name: E2E Tests (Git Bash)
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: bun ci
+
+      - run: bun run build
+
+      - run: bun run test
+
+      - name: Set up Python venv for e2e tests
+        run: python -m venv tests\e2e\.venv && tests\e2e\.venv\Scripts\pip.exe install -r tests\e2e\requirements.txt
+        shell: cmd
+
+      - name: Run e2e tests with Git Bash
+        run: |
+          cd tests/e2e
+          bun run test
+        shell: bash
+        env:
+          # MSYS_NO_PATHCONV=0 enables Git Bash path conversion behavior
+          # This is the default behavior when users run commands in Git Bash
+          # Setting to 0 ensures we catch path conversion issues
+          MSYS_NO_PATHCONV: "0"
+          SHELL: "bash"
