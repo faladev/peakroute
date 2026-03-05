@@ -125,6 +125,9 @@ jobs:
 
             ### Download
             Source code is available in the artifact `peakroute-${{ steps.version-check.outputs.current }}-source.zip` below.
+
+            ### Changelog
+            See the full changelog at [CHANGELOG.md](https://github.com/faladev/peakroute/blob/main/CHANGELOG.md).
           files: |
             peakroute-${{ steps.version-check.outputs.current }}-source.zip
           draft: false
