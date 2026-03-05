@@ -144,15 +144,32 @@ peakroute proxy stop              # Stop the proxy
 --no-tls                         # Disable HTTPS (overrides PEAKROUTE_HTTPS)
 --foreground                     # Run proxy in foreground instead of daemon
 --force                          # Override a route registered by another process
+--inject                         # Force injection of --port and --host flags
 
 # Environment variables
 PEAKROUTE_PORT=<number>           # Override the default proxy port
 PEAKROUTE_HTTPS=1                 # Always enable HTTPS
 PEAKROUTE_STATE_DIR=<path>        # Override the state directory
+PEAKROUTE_NO_UPDATE_CHECK=1       # Disable update availability notifications
 
 # Info
 peakroute --help                  # Show help
 peakroute --version               # Show version
+```
+
+## Update Notifications
+
+Peakroute automatically checks for updates once per day and shows a notification when a new version is available:
+
+```bash
+→ Update available: 0.5.9 (current: 0.5.8)
+  Run: npm install -g peakroute
+```
+
+To disable these notifications, set the environment variable:
+
+```bash
+export PEAKROUTE_NO_UPDATE_CHECK=1
 ```
 
 ## State Directory
@@ -163,6 +180,21 @@ Peakroute stores its state (routes, PID file, port file) in a directory that dep
 - **Port >= 1024** (no sudo): `~/.peakroute` -- user-scoped, no root involvement
 
 Override with the `PEAKROUTE_STATE_DIR` environment variable if needed.
+
+## Update Notifications
+
+Peakroute automatically checks for updates once per day and shows a friendly notification when a new version is available:
+
+```bash
+→ Update available: 0.5.9 (current: 0.5.8)
+  Run: npm install -g peakroute
+```
+
+The check is cached for 24 hours to avoid unnecessary network requests. To disable update notifications, set the environment variable:
+
+```bash
+export PEAKROUTE_NO_UPDATE_CHECK=1
+```
 
 ## Development
 
