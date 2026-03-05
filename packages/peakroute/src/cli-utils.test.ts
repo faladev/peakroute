@@ -1,7 +1,9 @@
 import { describe, it, expect, afterEach, beforeEach } from "vitest";
+import * as fs from "node:fs";
 import * as http from "node:http";
 import * as net from "node:net";
 import * as os from "node:os";
+import * as path from "node:path";
 import {
   DEFAULT_PROXY_PORT,
   PRIVILEGED_PORT_THRESHOLD,
@@ -130,8 +132,6 @@ describe("resolveStateDir", () => {
     expect(resolveStateDir(3000)).toBe(USER_STATE_DIR);
   });
 });
-
-import * as path from "node:path";
 
 describe("constants", () => {
   it("DEFAULT_PROXY_PORT is 1355", () => {
@@ -312,11 +312,8 @@ describe("injectFrameworkFlags", () => {
   });
 });
 
-import * as fs from "node:fs";
-import * as pathModule from "node:path";
-
 describe("injectFrameworkFlags with package.json detection", () => {
-  const tempDir = pathModule.join(os.tmpdir(), "peakroute-test-" + Date.now());
+  const tempDir = path.join(os.tmpdir(), "peakroute-test-" + Date.now());
   const originalCwd = process.cwd();
 
   beforeEach(() => {
@@ -335,7 +332,7 @@ describe("injectFrameworkFlags with package.json detection", () => {
 
   it("injects flags for Angular via npm run start", () => {
     fs.writeFileSync(
-      pathModule.join(tempDir, "package.json"),
+      path.join(tempDir, "package.json"),
       JSON.stringify({
         scripts: {
           start: "ng serve",
@@ -359,7 +356,7 @@ describe("injectFrameworkFlags with package.json detection", () => {
 
   it("injects flags for Vite via npm run dev", () => {
     fs.writeFileSync(
-      pathModule.join(tempDir, "package.json"),
+      path.join(tempDir, "package.json"),
       JSON.stringify({
         scripts: {
           dev: "vite dev",
@@ -382,7 +379,7 @@ describe("injectFrameworkFlags with package.json detection", () => {
 
   it("injects flags for Astro via yarn start", () => {
     fs.writeFileSync(
-      pathModule.join(tempDir, "package.json"),
+      path.join(tempDir, "package.json"),
       JSON.stringify({
         scripts: {
           start: "astro dev",
@@ -396,7 +393,7 @@ describe("injectFrameworkFlags with package.json detection", () => {
 
   it("injects flags for Angular via bun run start", () => {
     fs.writeFileSync(
-      pathModule.join(tempDir, "package.json"),
+      path.join(tempDir, "package.json"),
       JSON.stringify({
         scripts: {
           start: "ng serve --open",
@@ -410,7 +407,7 @@ describe("injectFrameworkFlags with package.json detection", () => {
 
   it("injects flags for React Router via pnpm run dev", () => {
     fs.writeFileSync(
-      pathModule.join(tempDir, "package.json"),
+      path.join(tempDir, "package.json"),
       JSON.stringify({
         scripts: {
           dev: "react-router dev",
@@ -433,7 +430,7 @@ describe("injectFrameworkFlags with package.json detection", () => {
 
   it("does not inject when script is not found in package.json", () => {
     fs.writeFileSync(
-      pathModule.join(tempDir, "package.json"),
+      path.join(tempDir, "package.json"),
       JSON.stringify({
         scripts: {
           build: "tsc",
@@ -453,7 +450,7 @@ describe("injectFrameworkFlags with package.json detection", () => {
 
   it("handles scripts with ng anywhere in the command", () => {
     fs.writeFileSync(
-      pathModule.join(tempDir, "package.json"),
+      path.join(tempDir, "package.json"),
       JSON.stringify({
         scripts: {
           start: "node ./node_modules/.bin/ng serve",
@@ -467,7 +464,7 @@ describe("injectFrameworkFlags with package.json detection", () => {
 
   it("handles cross-env prefix in scripts", () => {
     fs.writeFileSync(
-      pathModule.join(tempDir, "package.json"),
+      path.join(tempDir, "package.json"),
       JSON.stringify({
         scripts: {
           start: "cross-env NODE_ENV=development ng serve",
@@ -479,9 +476,6 @@ describe("injectFrameworkFlags with package.json detection", () => {
     expect(args).toEqual(["npm", "run", "start", "--port", "4567", "--host", "127.0.0.1"]);
   });
 });
-
-import * as fs from "node:fs";
-import * as path from "node:path";
 
 describe("injectFrameworkFlags with package.json detection", () => {
   const testDir = path.join(os.tmpdir(), "peakroute-test-" + Date.now());
