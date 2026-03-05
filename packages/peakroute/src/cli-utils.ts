@@ -635,8 +635,27 @@ function injectPortAndHostFlags(commandArgs: string[], port: number, strictPort:
  *
  * The peakroute proxy connects to 127.0.0.1 (IPv4), so we also inject
  * `--host 127.0.0.1` to prevent frameworks from binding to IPv6 `::1`.
+ *
+ * @param manualFramework - Optional framework name to force injection (e.g., "ng", "vite").
+ *                        Overrides automatic detection when provided.
  */
-export function injectFrameworkFlags(commandArgs: string[], port: number): void {
+export function injectFrameworkFlags(
+  commandArgs: string[],
+  port: number,
+  manualFramework?: string
+): void {
+  // If "force" is provided, inject flags without strictPort (generic fallback)
+  if (manualFramework === "force") {
+    injectPortAndHostFlags(commandArgs, port, false);
+    return;
+  }
+
+  // Use manual framework if provided and valid
+  if (manualFramework && FRAMEWORKS_NEEDING_PORT[manualFramework]) {
+    injectPortAndHostFlags(commandArgs, port, FRAMEWORKS_NEEDING_PORT[manualFramework].strictPort);
+    return;
+  }
+
   const framework = resolveFramework(commandArgs);
   if (framework) {
     injectPortAndHostFlags(commandArgs, port, framework.strictPort);

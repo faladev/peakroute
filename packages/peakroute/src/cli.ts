@@ -361,7 +361,8 @@ async function runApp(
   name: string,
   commandArgs: string[],
   tls: boolean,
-  force: boolean
+  force: boolean,
+  inject: boolean
 ) {
   const hostname = parseHostname(name);
 
@@ -494,7 +495,8 @@ async function runApp(
   console.log(chalk.cyan.bold(`\n  -> ${finalUrl}\n`));
 
   // Inject --port for frameworks that ignore the PORT env var (e.g. Vite)
-  injectFrameworkFlags(commandArgs, port);
+  // If --inject flag is used, force injection even if framework not detected
+  injectFrameworkFlags(commandArgs, port, inject ? "force" : undefined);
 
   // Run the command
   console.log(chalk.gray(`Running: PORT=${port} HOST=127.0.0.1 ${commandArgs.join(" ")}\n`));
@@ -610,6 +612,7 @@ ${chalk.bold("Options:")}
   --no-tls                      Disable HTTPS (overrides PEAKROUTE_HTTPS)
   --foreground                  Run proxy in foreground (for debugging)
   --force                       Override an existing route registered by another process
+  --inject                      Force injection of --port and --host flags (when auto-detection fails)
 
 ${chalk.bold("Environment variables:")}
   PEAKROUTE_PORT=<number>        Override the default proxy port (e.g. in .bashrc)
@@ -909,7 +912,13 @@ ${chalk.bold("Usage: peakroute proxy <command>")}
   // Run app -- only recognize --force before the command (position 0 or 1)
   const forceIdx = args.indexOf("--force");
   const force = forceIdx >= 0 && forceIdx <= 1;
-  const appArgs = force ? [...args.slice(0, forceIdx), ...args.slice(forceIdx + 1)] : args;
+
+  // Check for --inject flag to force framework injection
+  const injectIdx = args.indexOf("--inject");
+  const injectFlag = injectIdx >= 0 && injectIdx <= 1;
+
+  // Remove flags from args before processing
+  const appArgs = args.filter((_, i) => i !== forceIdx && i !== injectIdx);
   const name = appArgs[0];
   const commandArgs = appArgs.slice(1);
 
@@ -926,7 +935,7 @@ ${chalk.bold("Usage: peakroute proxy <command>")}
   const store = new RouteStore(dir, {
     onWarning: (msg) => console.warn(chalk.yellow(msg)),
   });
-  await runApp(store, port, dir, name, commandArgs, tls, force);
+  await runApp(store, port, dir, name, commandArgs, tls, force, injectFlag);
 }
 
 main().catch((err: unknown) => {

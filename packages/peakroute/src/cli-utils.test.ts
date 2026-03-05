@@ -283,6 +283,33 @@ describe("injectFrameworkFlags", () => {
     injectFrameworkFlags(args, 4567);
     expect(args).toEqual([]);
   });
+
+  it("forces injection with manualFramework='force' even for unknown commands", () => {
+    const args = ["custom-server", "--watch"];
+    injectFrameworkFlags(args, 4567, "force");
+    expect(args).toEqual(["custom-server", "--watch", "--port", "4567", "--host", "127.0.0.1"]);
+  });
+
+  it("uses manual framework when specified", () => {
+    const args = ["npm", "run", "start"];
+    injectFrameworkFlags(args, 4567, "ng");
+    expect(args).toEqual(["npm", "run", "start", "--port", "4567", "--host", "127.0.0.1"]);
+  });
+
+  it("manual framework 'vite' includes --strictPort", () => {
+    const args = ["npm", "run", "dev"];
+    injectFrameworkFlags(args, 4567, "vite");
+    expect(args).toEqual([
+      "npm",
+      "run",
+      "dev",
+      "--port",
+      "4567",
+      "--strictPort",
+      "--host",
+      "127.0.0.1",
+    ]);
+  });
 });
 
 import * as fs from "node:fs";
