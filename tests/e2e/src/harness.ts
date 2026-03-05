@@ -1,4 +1,4 @@
-import { execSync, spawn, spawnSync, type ChildProcess } from "node:child_process";
+import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import * as fs from "node:fs";
 import * as http from "node:http";
 import * as os from "node:os";
@@ -23,7 +23,8 @@ export const PYTHON_BIN =
 function killPidSafe(pid: number): void {
   try {
     if (process.platform === "win32") {
-      execSync(`taskkill /F /PID ${pid}`, { windowsHide: true });
+      // Use spawnSync with array args to avoid Git Bash path conversion issues
+      spawnSync("taskkill", ["/F", "/PID", pid.toString()], { windowsHide: true });
     } else {
       process.kill(pid, "SIGTERM");
     }

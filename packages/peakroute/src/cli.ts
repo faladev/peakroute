@@ -55,11 +55,16 @@ const SUDO_SPAWN_TIMEOUT_MS = 30_000;
 function killProcess(pid: number, force = false): void {
   if (IS_WINDOWS) {
     // Windows: use taskkill /F for force, /T to kill process tree
-    const args = force ? ["/F", "/T", "/PID", pid.toString()] : ["/T", "/PID", pid.toString()];
-    try {
-      execSync(`taskkill ${args.join(" ")}`, { windowsHide: true });
-    } catch {
-      // taskkill may fail if process already exited; ignore
+    // Use spawnSync with array args to avoid Git Bash path conversion issues
+    // (Git Bash converts /F to F:/ when passed in a shell string)
+    // Always use /F on Windows for reliable termination of Node.js processes
+    const args = ["/F", "/T", "/PID", pid.toString()];
+    // spawnSync returns an object; check status for actual result
+    const result = spawnSync("taskkill", args, { windowsHide: true, stdio: "pipe" });
+    if (result.status !== 0 && result.status !== 128) {
+      // 128 = process already exited; ignore that
+      // Other errors may indicate permission issues or the process cannot be terminated
+      throw new Error(`taskkill failed with exit code ${result.status}`);
     }
   } else {
     // Unix: try SIGTERM first, then SIGKILL if force is true

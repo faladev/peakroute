@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.5.6
+
+### Improvements
+
+- **CI/Git Bash testing**: Add separate GitHub Actions workflow (`e2e-gitbash.yml`) to run e2e tests specifically in Git Bash on Windows. This catches path conversion issues that don't appear in CMD or PowerShell.
+
+### Bug Fixes
+
+- **Git Bash process termination**: Fix `peakroute proxy stop` failing on Git Bash due to path conversion issues. Git Bash converts `/F` to `F:/` when used in shell commands. Fixed by using `spawnSync` with array arguments instead of `execSync` with string, and always using `/F` flag for reliable termination of Node.js processes on Windows.
+
 ## 0.5.5
 
 ### Improvements
