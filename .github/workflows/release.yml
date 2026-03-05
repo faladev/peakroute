@@ -67,10 +67,10 @@ jobs:
           echo "published=$PUBLISHED_VERSION" >> $GITHUB_OUTPUT
           if [ "$CURRENT_VERSION" != "$PUBLISHED_VERSION" ]; then
             echo "changed=true" >> $GITHUB_OUTPUT
-            echo "✅ Nova versão detectada: $PUBLISHED_VERSION → $CURRENT_VERSION"
+            echo "✅ New version detected: $PUBLISHED_VERSION → $CURRENT_VERSION"
           else
             echo "changed=false" >> $GITHUB_OUTPUT
-            echo "⏭️ Versão já publicada: $CURRENT_VERSION"
+            echo "⏭️ Version already published: $CURRENT_VERSION"
           fi
 
       - name: Update npm for trusted publishing
@@ -101,13 +101,30 @@ jobs:
           body: |
             ## peakroute v${{ steps.version-check.outputs.current }}
 
-            ### Instalação via npm
+            ### Installation
+
+            **npm:**
             ```bash
             npm install -g peakroute@${{ steps.version-check.outputs.current }}
             ```
 
+            **bun:**
+            ```bash
+            bun add -g peakroute@${{ steps.version-check.outputs.current }}
+            ```
+
+            **yarn:**
+            ```bash
+            yarn global add peakroute@${{ steps.version-check.outputs.current }}
+            ```
+
+            **pnpm:**
+            ```bash
+            pnpm add -g peakroute@${{ steps.version-check.outputs.current }}
+            ```
+
             ### Download
-            O código fonte está disponível no artefato `peakroute-${{ steps.version-check.outputs.current }}-source.zip` abaixo.
+            Source code is available in the artifact `peakroute-${{ steps.version-check.outputs.current }}-source.zip` below.
           files: |
             peakroute-${{ steps.version-check.outputs.current }}-source.zip
           draft: false
