@@ -562,6 +562,73 @@ function detectFrameworkFromPackageJson(scriptName: string): string | null {
 }
 
 /**
+ * Extract the script name from command args when using a package manager.
+ * Returns null if no script name can be determined.
+ */
+function extractScriptName(commandArgs: string[], basename: string): string | null {
+  // Look for "run <script>" pattern: npm run start, pnpm run dev, etc.
+  const runIndex = commandArgs.indexOf("run");
+  if (runIndex !== -1 && runIndex + 1 < commandArgs.length) {
+    return commandArgs[runIndex + 1];
+  }
+
+  // yarn, pnpm and bun can run scripts directly without "run": yarn start, pnpm dev
+  if (basename === "yarn" || basename === "bun" || basename === "pnpm") {
+    const scriptName = commandArgs[1];
+    if (scriptName && !scriptName.startsWith("-")) {
+      return scriptName;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Resolve the framework config from command arguments.
+ * Returns null if no framework is detected.
+ */
+function resolveFramework(commandArgs: string[]): { name: string; strictPort: boolean } | null {
+  const cmd = commandArgs[0];
+  if (!cmd) return null;
+
+  const basename = path.basename(cmd);
+
+  // Direct framework invocation (e.g., "ng serve", "vite dev")
+  const directFramework = FRAMEWORKS_NEEDING_PORT[basename];
+  if (directFramework) {
+    return { name: basename, ...directFramework };
+  }
+
+  // Package manager invocation (e.g., "npm run start")
+  if (!PACKAGE_MANAGERS.has(basename)) return null;
+
+  const scriptName = extractScriptName(commandArgs, basename);
+  if (!scriptName) return null;
+
+  const detectedFramework = detectFrameworkFromPackageJson(scriptName);
+  if (!detectedFramework) return null;
+
+  return { name: detectedFramework, ...FRAMEWORKS_NEEDING_PORT[detectedFramework] };
+}
+
+/**
+ * Inject port and host flags if not already present.
+ * Mutates commandArgs in-place.
+ */
+function injectPortAndHostFlags(commandArgs: string[], port: number, strictPort: boolean): void {
+  if (!commandArgs.includes("--port")) {
+    commandArgs.push("--port", port.toString());
+    if (strictPort) {
+      commandArgs.push("--strictPort");
+    }
+  }
+
+  if (!commandArgs.includes("--host")) {
+    commandArgs.push("--host", "127.0.0.1");
+  }
+}
+
+/**
  * Check if `commandArgs` invokes a framework that ignores `PORT` and, if so,
  * mutate the array in-place to append the correct CLI flags so the app
  * listens on the expected port and address.
@@ -570,46 +637,9 @@ function detectFrameworkFromPackageJson(scriptName: string): string | null {
  * `--host 127.0.0.1` to prevent frameworks from binding to IPv6 `::1`.
  */
 export function injectFrameworkFlags(commandArgs: string[], port: number): void {
-  const cmd = commandArgs[0];
-  if (!cmd) return;
-
-  const basename = path.basename(cmd);
-  let framework = FRAMEWORKS_NEEDING_PORT[basename];
-
-  // If it's a package manager (npm/yarn/pnpm/bun), try to detect the actual framework
-  if (!framework && PACKAGE_MANAGERS.has(basename)) {
-    // Look for "run <script>" pattern: npm run start, yarn dev, pnpm build, etc.
-    const runIndex = commandArgs.indexOf("run");
-    if (runIndex !== -1 && runIndex + 1 < commandArgs.length) {
-      const scriptName = commandArgs[runIndex + 1];
-      const detectedFramework = detectFrameworkFromPackageJson(scriptName);
-      if (detectedFramework) {
-        framework = FRAMEWORKS_NEEDING_PORT[detectedFramework];
-      }
-    } else if (basename === "yarn" || basename === "bun" || basename === "pnpm") {
-      // yarn, pnpm and bun can run scripts directly: yarn start, pnpm dev, bun run dev
-      // bun run <script> or yarn <script> or pnpm <script>
-      const scriptName = commandArgs[1];
-      if (scriptName && !scriptName.startsWith("-")) {
-        const detectedFramework = detectFrameworkFromPackageJson(scriptName);
-        if (detectedFramework) {
-          framework = FRAMEWORKS_NEEDING_PORT[detectedFramework];
-        }
-      }
-    }
-  }
-
-  if (!framework) return;
-
-  if (!commandArgs.includes("--port")) {
-    commandArgs.push("--port", port.toString());
-    if (framework.strictPort) {
-      commandArgs.push("--strictPort");
-    }
-  }
-
-  if (!commandArgs.includes("--host")) {
-    commandArgs.push("--host", "127.0.0.1");
+  const framework = resolveFramework(commandArgs);
+  if (framework) {
+    injectPortAndHostFlags(commandArgs, port, framework.strictPort);
   }
 }
 
