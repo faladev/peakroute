@@ -1,35 +1,18 @@
 name: Release
 
 on:
-  push:
+  workflow_run:
+    workflows: [CI, "E2E Tests (Git Bash)"]
+    types: [completed]
     branches: [main]
 
 jobs:
-  wait-for-ci:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Wait for CI to pass
-        uses: lewagon/wait-on-check-action@v1.3.4
-        with:
-          ref: ${{ github.ref }}
-          check-name: "CI"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          wait-interval: 10
-          allowed-conclusions: success
-
-      - name: Wait for E2E GitBash to pass
-        uses: lewagon/wait-on-check-action@v1.3.4
-        with:
-          ref: ${{ github.ref }}
-          check-name: "E2E Tests (Git Bash)"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          wait-interval: 10
-          allowed-conclusions: success
-
   check-and-publish:
     runs-on: ubuntu-latest
-    needs: [wait-for-ci]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    # Only run if both triggering workflows succeeded and this is a push to main
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push'
     permissions:
       contents: write # Required to create git tags and read repo
       id-token: write # Required for OIDC trusted publishing
