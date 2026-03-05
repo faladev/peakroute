@@ -1,19 +1,17 @@
 # Changelog
 
-## 0.5.9
+## 0.5.8
 
 ### Features
 
 - **Update notification**: Show a friendly update message when a new version is available. Checks npm registry once per day (cached) and displays:
+
   ```
   → Update available: 0.6.0 (current: 0.5.8)
     Run: npm install -g peakroute
   ```
+
   Disable with `PEAKROUTE_NO_UPDATE_CHECK=1` environment variable.
-
-## 0.5.8
-
-### Features
 
 - **`--inject` flag for manual framework flag injection**: Add `--inject` flag to force injection of `--port` and `--host` flags even when automatic framework detection fails. Useful for custom servers or frameworks not yet supported by auto-detection.
 
