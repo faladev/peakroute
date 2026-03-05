@@ -12,6 +12,7 @@ import { fixOwnership, formatUrl, isErrnoException, parseHostname, chmodSafe } f
 import { FILE_MODE, RouteConflictError, RouteStore } from "./routes.js";
 import { IS_WINDOWS, PRIVILEGED_PORT_THRESHOLD } from "./platform.js";
 import {
+  checkForUpdate,
   discoverState,
   findFreePort,
   findPidOnPort,
@@ -523,6 +524,9 @@ async function runApp(
 // ---------------------------------------------------------------------------
 
 async function main() {
+  // Check for updates (non-blocking)
+  const updatePromise = checkForUpdate(__VERSION__);
+
   if (process.stdin.isTTY) {
     process.on("exit", () => {
       try {
@@ -534,6 +538,15 @@ async function main() {
   }
 
   const args = process.argv.slice(2);
+
+  // Handle update notification before other output
+  const newerVersion = await updatePromise;
+  if (newerVersion) {
+    console.log(
+      chalk.yellow(`\n→ Update available: ${chalk.bold(newerVersion)} (current: ${__VERSION__})`)
+    );
+    console.log(chalk.gray(`  Run: npm install -g peakroute\n`));
+  }
 
   // Block npx / pnpm dlx -- peakroute should be installed globally, not run
   // via npx. Running "sudo npx" is unsafe because it performs package

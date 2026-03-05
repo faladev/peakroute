@@ -678,3 +678,119 @@ export function prompt(question: string): Promise<string> {
     });
   });
 }
+
+// ---------------------------------------------------------------------------
+// Update checker
+// ---------------------------------------------------------------------------
+
+/** Cache duration for update checks (24 hours in milliseconds) */
+const UPDATE_CHECK_CACHE_MS = 24 * 60 * 60 * 1000;
+
+interface UpdateCheckCache {
+  version: string;
+  lastCheck: number;
+}
+
+/**
+ * Get the path to the update check cache file.
+ */
+function getUpdateCachePath(): string {
+  return path.join(USER_STATE_DIR, ".update-check.json");
+}
+
+/**
+ * Compare two semantic version strings.
+ * Returns: -1 if v1 < v2, 0 if equal, 1 if v1 > v2
+ */
+function compareVersions(v1: string, v2: string): number {
+  const parts1 = v1.split(".").map(Number);
+  const parts2 = v2.split(".").map(Number);
+  const maxLen = Math.max(parts1.length, parts2.length);
+
+  for (let i = 0; i < maxLen; i++) {
+    const a = parts1[i] || 0;
+    const b = parts2[i] || 0;
+    if (a < b) return -1;
+    if (a > b) return 1;
+  }
+  return 0;
+}
+
+/**
+ * Check if an update is available, respecting cache.
+ * Returns the newer version string if available, null otherwise.
+ */
+export async function checkForUpdate(currentVersion: string): Promise<string | null> {
+  // Skip if PEAKROUTE_NO_UPDATE_CHECK is set
+  if (process.env.PEAKROUTE_NO_UPDATE_CHECK) {
+    return null;
+  }
+
+  const cachePath = getUpdateCachePath();
+
+  // Check cache first
+  try {
+    const cache: UpdateCheckCache = JSON.parse(fs.readFileSync(cachePath, "utf-8"));
+    if (Date.now() - cache.lastCheck < UPDATE_CHECK_CACHE_MS) {
+      // Use cached result
+      if (compareVersions(cache.version, currentVersion) > 0) {
+        return cache.version;
+      }
+      return null;
+    }
+  } catch {
+    // Cache doesn't exist or is invalid
+  }
+
+  // Fetch latest version from npm registry
+  return new Promise((resolve) => {
+    const req = https.get(
+      "https://registry.npmjs.org/peakroute/latest",
+      {
+        timeout: 3000,
+        headers: {
+          Accept: "application/json",
+        },
+      },
+      (res) => {
+        let data = "";
+        res.on("data", (chunk) => {
+          data += chunk;
+        });
+        res.on("end", () => {
+          try {
+            const response = JSON.parse(data);
+            const latestVersion = response.version as string;
+
+            // Save to cache
+            const cache: UpdateCheckCache = {
+              version: latestVersion,
+              lastCheck: Date.now(),
+            };
+            try {
+              fs.mkdirSync(USER_STATE_DIR, { recursive: true });
+              fs.writeFileSync(cachePath, JSON.stringify(cache), { mode: 0o644 });
+            } catch {
+              // Ignore cache write errors
+            }
+
+            if (compareVersions(latestVersion, currentVersion) > 0) {
+              resolve(latestVersion);
+            } else {
+              resolve(null);
+            }
+          } catch {
+            resolve(null);
+          }
+        });
+      }
+    );
+
+    req.on("error", () => resolve(null));
+    req.on("timeout", () => {
+      req.destroy();
+      resolve(null);
+    });
+    req.setTimeout(3000);
+  });
+}
