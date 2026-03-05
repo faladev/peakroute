@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.5.8
+
+### Features
+
+- **`--inject` flag for manual framework flag injection**: Add `--inject` flag to force injection of `--port` and `--host` flags even when automatic framework detection fails. Useful for custom servers or frameworks not yet supported by auto-detection.
+  ```bash
+  peakroute --inject myapp custom-server --watch
+  ```
+
+### Bug Fixes
+
+- **Angular framework detection via npm/yarn/pnpm/bun**: Fix `peakroute` not detecting Angular when running via package manager scripts (e.g., `npm run start`). Previously, the framework detection only worked when calling `ng serve` directly. Now it parses `package.json` to detect Angular, Vite, Astro, and React Router when invoked via `npm run`, `yarn`, `pnpm`, or `bun` commands.
+
 ## 0.5.7
 
 ### Improvements

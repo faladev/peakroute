@@ -1,7 +1,9 @@
 import { describe, it, expect, afterEach, beforeEach } from "vitest";
+import * as fs from "node:fs";
 import * as http from "node:http";
 import * as net from "node:net";
 import * as os from "node:os";
+import * as path from "node:path";
 import {
   DEFAULT_PROXY_PORT,
   PRIVILEGED_PORT_THRESHOLD,
@@ -130,8 +132,6 @@ describe("resolveStateDir", () => {
     expect(resolveStateDir(3000)).toBe(USER_STATE_DIR);
   });
 });
-
-import * as path from "node:path";
 
 describe("constants", () => {
   it("DEFAULT_PROXY_PORT is 1355", () => {
@@ -282,5 +282,382 @@ describe("injectFrameworkFlags", () => {
     const args: string[] = [];
     injectFrameworkFlags(args, 4567);
     expect(args).toEqual([]);
+  });
+
+  it("forces injection with manualFramework='force' even for unknown commands", () => {
+    const args = ["custom-server", "--watch"];
+    injectFrameworkFlags(args, 4567, "force");
+    expect(args).toEqual(["custom-server", "--watch", "--port", "4567", "--host", "127.0.0.1"]);
+  });
+
+  it("uses manual framework when specified", () => {
+    const args = ["npm", "run", "start"];
+    injectFrameworkFlags(args, 4567, "ng");
+    expect(args).toEqual(["npm", "run", "start", "--port", "4567", "--host", "127.0.0.1"]);
+  });
+
+  it("manual framework 'vite' includes --strictPort", () => {
+    const args = ["npm", "run", "dev"];
+    injectFrameworkFlags(args, 4567, "vite");
+    expect(args).toEqual([
+      "npm",
+      "run",
+      "dev",
+      "--port",
+      "4567",
+      "--strictPort",
+      "--host",
+      "127.0.0.1",
+    ]);
+  });
+});
+
+describe("injectFrameworkFlags with package.json detection", () => {
+  const tempDir = path.join(os.tmpdir(), "peakroute-test-" + Date.now());
+  const originalCwd = process.cwd();
+
+  beforeEach(() => {
+    fs.mkdirSync(tempDir, { recursive: true });
+    process.chdir(tempDir);
+  });
+
+  afterEach(() => {
+    process.chdir(originalCwd);
+    try {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    } catch {
+      // Ignore cleanup errors
+    }
+  });
+
+  it("injects flags for Angular via npm run start", () => {
+    fs.writeFileSync(
+      path.join(tempDir, "package.json"),
+      JSON.stringify({
+        scripts: {
+          start: "ng serve",
+        },
+      })
+    );
+    const args = ["npm", "run", "start", "--", "-c=local"];
+    injectFrameworkFlags(args, 4567);
+    expect(args).toEqual([
+      "npm",
+      "run",
+      "start",
+      "--",
+      "-c=local",
+      "--port",
+      "4567",
+      "--host",
+      "127.0.0.1",
+    ]);
+  });
+
+  it("injects flags for Vite via npm run dev", () => {
+    fs.writeFileSync(
+      path.join(tempDir, "package.json"),
+      JSON.stringify({
+        scripts: {
+          dev: "vite dev",
+        },
+      })
+    );
+    const args = ["npm", "run", "dev"];
+    injectFrameworkFlags(args, 4567);
+    expect(args).toEqual([
+      "npm",
+      "run",
+      "dev",
+      "--port",
+      "4567",
+      "--strictPort",
+      "--host",
+      "127.0.0.1",
+    ]);
+  });
+
+  it("injects flags for Astro via yarn start", () => {
+    fs.writeFileSync(
+      path.join(tempDir, "package.json"),
+      JSON.stringify({
+        scripts: {
+          start: "astro dev",
+        },
+      })
+    );
+    const args = ["yarn", "start"];
+    injectFrameworkFlags(args, 4567);
+    expect(args).toEqual(["yarn", "start", "--port", "4567", "--host", "127.0.0.1"]);
+  });
+
+  it("injects flags for Angular via bun run start", () => {
+    fs.writeFileSync(
+      path.join(tempDir, "package.json"),
+      JSON.stringify({
+        scripts: {
+          start: "ng serve --open",
+        },
+      })
+    );
+    const args = ["bun", "run", "start"];
+    injectFrameworkFlags(args, 4567);
+    expect(args).toEqual(["bun", "run", "start", "--port", "4567", "--host", "127.0.0.1"]);
+  });
+
+  it("injects flags for React Router via pnpm run dev", () => {
+    fs.writeFileSync(
+      path.join(tempDir, "package.json"),
+      JSON.stringify({
+        scripts: {
+          dev: "react-router dev",
+        },
+      })
+    );
+    const args = ["pnpm", "run", "dev"];
+    injectFrameworkFlags(args, 4567);
+    expect(args).toEqual([
+      "pnpm",
+      "run",
+      "dev",
+      "--port",
+      "4567",
+      "--strictPort",
+      "--host",
+      "127.0.0.1",
+    ]);
+  });
+
+  it("does not inject when script is not found in package.json", () => {
+    fs.writeFileSync(
+      path.join(tempDir, "package.json"),
+      JSON.stringify({
+        scripts: {
+          build: "tsc",
+        },
+      })
+    );
+    const args = ["npm", "run", "start"];
+    injectFrameworkFlags(args, 4567);
+    expect(args).toEqual(["npm", "run", "start"]);
+  });
+
+  it("does not inject when package.json does not exist", () => {
+    const args = ["npm", "run", "start"];
+    injectFrameworkFlags(args, 4567);
+    expect(args).toEqual(["npm", "run", "start"]);
+  });
+
+  it("handles scripts with ng anywhere in the command", () => {
+    fs.writeFileSync(
+      path.join(tempDir, "package.json"),
+      JSON.stringify({
+        scripts: {
+          start: "node ./node_modules/.bin/ng serve",
+        },
+      })
+    );
+    const args = ["npm", "run", "start"];
+    injectFrameworkFlags(args, 4567);
+    expect(args).toEqual(["npm", "run", "start", "--port", "4567", "--host", "127.0.0.1"]);
+  });
+
+  it("handles cross-env prefix in scripts", () => {
+    fs.writeFileSync(
+      path.join(tempDir, "package.json"),
+      JSON.stringify({
+        scripts: {
+          start: "cross-env NODE_ENV=development ng serve",
+        },
+      })
+    );
+    const args = ["npm", "run", "start"];
+    injectFrameworkFlags(args, 4567);
+    expect(args).toEqual(["npm", "run", "start", "--port", "4567", "--host", "127.0.0.1"]);
+  });
+});
+
+describe("injectFrameworkFlags with package.json detection", () => {
+  const testDir = path.join(os.tmpdir(), "peakroute-test-" + Date.now());
+  const originalCwd = process.cwd();
+
+  beforeEach(() => {
+    // Create temp directory and change into it
+    fs.mkdirSync(testDir, { recursive: true });
+    process.chdir(testDir);
+  });
+
+  afterEach(() => {
+    // Restore original cwd and cleanup
+    process.chdir(originalCwd);
+    try {
+      fs.rmSync(testDir, { recursive: true, force: true });
+    } catch {
+      // Ignore cleanup errors
+    }
+  });
+
+  it("detects Angular via npm run start when package.json has ng serve", () => {
+    const pkg = {
+      name: "test-app",
+      scripts: {
+        start: "ng serve",
+        build: "ng build",
+      },
+    };
+    fs.writeFileSync(path.join(testDir, "package.json"), JSON.stringify(pkg));
+
+    const args = ["npm", "run", "start", "--", "-c=local"];
+    injectFrameworkFlags(args, 4567);
+    expect(args).toEqual([
+      "npm",
+      "run",
+      "start",
+      "--",
+      "-c=local",
+      "--port",
+      "4567",
+      "--host",
+      "127.0.0.1",
+    ]);
+  });
+
+  it("detects Vite via npm run dev when package.json has vite", () => {
+    const pkg = {
+      name: "test-app",
+      scripts: {
+        dev: "vite dev",
+        build: "vite build",
+      },
+    };
+    fs.writeFileSync(path.join(testDir, "package.json"), JSON.stringify(pkg));
+
+    const args = ["npm", "run", "dev"];
+    injectFrameworkFlags(args, 4567);
+    expect(args).toEqual([
+      "npm",
+      "run",
+      "dev",
+      "--port",
+      "4567",
+      "--strictPort",
+      "--host",
+      "127.0.0.1",
+    ]);
+  });
+
+  it("detects Astro via yarn dev when package.json has astro dev", () => {
+    const pkg = {
+      name: "test-app",
+      scripts: {
+        dev: "astro dev",
+        build: "astro build",
+      },
+    };
+    fs.writeFileSync(path.join(testDir, "package.json"), JSON.stringify(pkg));
+
+    const args = ["yarn", "dev"];
+    injectFrameworkFlags(args, 4567);
+    expect(args).toEqual(["yarn", "dev", "--port", "4567", "--host", "127.0.0.1"]);
+  });
+
+  it("detects Angular via pnpm start when package.json has ng serve", () => {
+    const pkg = {
+      name: "test-app",
+      scripts: {
+        start: "ng serve --hmr",
+      },
+    };
+    fs.writeFileSync(path.join(testDir, "package.json"), JSON.stringify(pkg));
+
+    const args = ["pnpm", "start"];
+    injectFrameworkFlags(args, 4567);
+    expect(args).toEqual(["pnpm", "start", "--port", "4567", "--host", "127.0.0.1"]);
+  });
+
+  it("detects React Router via bun run dev when package.json has react-router", () => {
+    const pkg = {
+      name: "test-app",
+      scripts: {
+        dev: "react-router dev",
+      },
+    };
+    fs.writeFileSync(path.join(testDir, "package.json"), JSON.stringify(pkg));
+
+    const args = ["bun", "run", "dev"];
+    injectFrameworkFlags(args, 4567);
+    expect(args).toEqual([
+      "bun",
+      "run",
+      "dev",
+      "--port",
+      "4567",
+      "--strictPort",
+      "--host",
+      "127.0.0.1",
+    ]);
+  });
+
+  it("does not inject when package.json has no matching framework", () => {
+    const pkg = {
+      name: "test-app",
+      scripts: {
+        start: "node server.js",
+      },
+    };
+    fs.writeFileSync(path.join(testDir, "package.json"), JSON.stringify(pkg));
+
+    const args = ["npm", "run", "start"];
+    injectFrameworkFlags(args, 4567);
+    expect(args).toEqual(["npm", "run", "start"]);
+  });
+
+  it("does not inject when npm script is not found in package.json", () => {
+    const pkg = {
+      name: "test-app",
+      scripts: {
+        dev: "vite",
+      },
+    };
+    fs.writeFileSync(path.join(testDir, "package.json"), JSON.stringify(pkg));
+
+    const args = ["npm", "run", "start"]; // "start" script doesn't exist
+    injectFrameworkFlags(args, 4567);
+    expect(args).toEqual(["npm", "run", "start"]);
+  });
+
+  it("does not inject when no package.json exists", () => {
+    // Don't create package.json
+    const args = ["npm", "run", "start"];
+    injectFrameworkFlags(args, 4567);
+    expect(args).toEqual(["npm", "run", "start"]);
+  });
+
+  it("handles Angular with cross-env prefix in script", () => {
+    const pkg = {
+      name: "test-app",
+      scripts: {
+        start: "cross-env NODE_ENV=development ng serve",
+      },
+    };
+    fs.writeFileSync(path.join(testDir, "package.json"), JSON.stringify(pkg));
+
+    const args = ["npm", "run", "start"];
+    injectFrameworkFlags(args, 4567);
+    expect(args).toEqual(["npm", "run", "start", "--port", "4567", "--host", "127.0.0.1"]);
+  });
+
+  it("handles chained npm scripts (npm run build && ng serve)", () => {
+    const pkg = {
+      name: "test-app",
+      scripts: {
+        start: "npm run build && ng serve",
+      },
+    };
+    fs.writeFileSync(path.join(testDir, "package.json"), JSON.stringify(pkg));
+
+    const args = ["npm", "run", "start"];
+    injectFrameworkFlags(args, 4567);
+    expect(args).toEqual(["npm", "run", "start", "--port", "4567", "--host", "127.0.0.1"]);
   });
 });

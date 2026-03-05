@@ -521,30 +521,144 @@ const FRAMEWORKS_NEEDING_PORT: Record<string, { strictPort: boolean }> = {
 };
 
 /**
- * Check if `commandArgs` invokes a framework that ignores `PORT` and, if so,
- * mutate the array in-place to append the correct CLI flags so the app
- * listens on the expected port and address.
- *
- * The peakroute proxy connects to 127.0.0.1 (IPv4), so we also inject
- * `--host 127.0.0.1` to prevent frameworks from binding to IPv6 `::1`.
+ * Package managers that wrap framework commands.
+ * Used to detect frameworks when running via npm/yarn/pnpm/bun scripts.
  */
-export function injectFrameworkFlags(commandArgs: string[], port: number): void {
+const PACKAGE_MANAGERS = new Set(["npm", "yarn", "pnpm", "bun"]);
+
+/**
+ * Detect which framework command will actually run based on package.json scripts.
+ * Returns the base command name (e.g., "ng", "vite") or null if not detected.
+ */
+function detectFrameworkFromPackageJson(scriptName: string): string | null {
+  try {
+    const pkgPath = path.join(process.cwd(), "package.json");
+    if (!fs.existsSync(pkgPath)) return null;
+
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
+    const script = pkg.scripts?.[scriptName];
+    if (!script) return null;
+
+    // Check for framework commands in the script
+    for (const [framework] of Object.entries(FRAMEWORKS_NEEDING_PORT)) {
+      // Match framework command as a word boundary:
+      // - At start of string
+      // - After whitespace, semicolon, ampersand, pipe (command separators)
+      // - After a path separator (for paths like ./node_modules/.bin/ng)
+      // - After cross-env with any env vars
+      // Must be followed by whitespace or end of string
+      const regex = new RegExp(
+        `(?:^|[\\s;&|/]|cross-env(?:\\s+[^\\s]+)*\\s+)${framework}(?=\\s|$)`,
+        "i"
+      );
+      if (regex.test(script)) {
+        return framework;
+      }
+    }
+  } catch {
+    // Ignore parse errors or file issues
+  }
+  return null;
+}
+
+/**
+ * Extract the script name from command args when using a package manager.
+ * Returns null if no script name can be determined.
+ */
+function extractScriptName(commandArgs: string[], basename: string): string | null {
+  // Look for "run <script>" pattern: npm run start, pnpm run dev, etc.
+  const runIndex = commandArgs.indexOf("run");
+  if (runIndex !== -1 && runIndex + 1 < commandArgs.length) {
+    return commandArgs[runIndex + 1];
+  }
+
+  // yarn, pnpm and bun can run scripts directly without "run": yarn start, pnpm dev
+  if (basename === "yarn" || basename === "bun" || basename === "pnpm") {
+    const scriptName = commandArgs[1];
+    if (scriptName && !scriptName.startsWith("-")) {
+      return scriptName;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Resolve the framework config from command arguments.
+ * Returns null if no framework is detected.
+ */
+function resolveFramework(commandArgs: string[]): { name: string; strictPort: boolean } | null {
   const cmd = commandArgs[0];
-  if (!cmd) return;
+  if (!cmd) return null;
 
   const basename = path.basename(cmd);
-  const framework = FRAMEWORKS_NEEDING_PORT[basename];
-  if (!framework) return;
 
+  // Direct framework invocation (e.g., "ng serve", "vite dev")
+  const directFramework = FRAMEWORKS_NEEDING_PORT[basename];
+  if (directFramework) {
+    return { name: basename, ...directFramework };
+  }
+
+  // Package manager invocation (e.g., "npm run start")
+  if (!PACKAGE_MANAGERS.has(basename)) return null;
+
+  const scriptName = extractScriptName(commandArgs, basename);
+  if (!scriptName) return null;
+
+  const detectedFramework = detectFrameworkFromPackageJson(scriptName);
+  if (!detectedFramework) return null;
+
+  return { name: detectedFramework, ...FRAMEWORKS_NEEDING_PORT[detectedFramework] };
+}
+
+/**
+ * Inject port and host flags if not already present.
+ * Mutates commandArgs in-place.
+ */
+function injectPortAndHostFlags(commandArgs: string[], port: number, strictPort: boolean): void {
   if (!commandArgs.includes("--port")) {
     commandArgs.push("--port", port.toString());
-    if (framework.strictPort) {
+    if (strictPort) {
       commandArgs.push("--strictPort");
     }
   }
 
   if (!commandArgs.includes("--host")) {
     commandArgs.push("--host", "127.0.0.1");
+  }
+}
+
+/**
+ * Check if `commandArgs` invokes a framework that ignores `PORT` and, if so,
+ * mutate the array in-place to append the correct CLI flags so the app
+ * listens on the expected port and address.
+ *
+ * The peakroute proxy connects to 127.0.0.1 (IPv4), so we also inject
+ * `--host 127.0.0.1` to prevent frameworks from binding to IPv6 `::1`.
+ *
+ * @param manualFramework - Optional framework name to force injection (e.g., "ng", "vite").
+ *                        Overrides automatic detection when provided.
+ */
+export function injectFrameworkFlags(
+  commandArgs: string[],
+  port: number,
+  manualFramework?: string
+): void {
+  // If "force" is provided, inject flags without strictPort (generic fallback)
+  if (manualFramework === "force") {
+    injectPortAndHostFlags(commandArgs, port, false);
+    return;
+  }
+
+  // Use manual framework if provided and valid
+  if (manualFramework && FRAMEWORKS_NEEDING_PORT[manualFramework]) {
+    injectPortAndHostFlags(commandArgs, port, FRAMEWORKS_NEEDING_PORT[manualFramework].strictPort);
+    return;
+  }
+
+  const framework = resolveFramework(commandArgs);
+  if (framework) {
+    injectPortAndHostFlags(commandArgs, port, framework.strictPort);
   }
 }
 
