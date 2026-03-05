@@ -5,7 +5,7 @@ declare const __VERSION__: string;
 import chalk from "chalk";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { spawn, spawnSync, execSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { createSNICallback, ensureCerts, isCATrusted, trustCA } from "./certs.js";
 import { createProxyServer } from "./proxy.js";
 import { fixOwnership, formatUrl, isErrnoException, parseHostname, chmodSafe } from "./utils.js";
