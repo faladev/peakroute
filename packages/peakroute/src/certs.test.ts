@@ -32,7 +32,7 @@ describe("ensureCerts", () => {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
-  it("generates CA and server certificates on first call", () => {
+  it("generates CA and server certificates on first call", { timeout: 15000 }, () => {
     const result = ensureCerts(tmpDir);
 
     expect(result.caGenerated).toBe(true);

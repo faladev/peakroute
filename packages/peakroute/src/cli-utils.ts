@@ -543,6 +543,8 @@ const FRAMEWORKS_NEEDING_PORT: Record<string, { strictPort: boolean }> = {
   "react-router": { strictPort: true },
   astro: { strictPort: false },
   ng: { strictPort: false },
+  expo: { strictPort: false },
+  "react-native": { strictPort: false },
 };
 
 /**
@@ -640,7 +642,12 @@ function resolveFramework(commandArgs: string[]): { name: string; strictPort: bo
  * Inject port and host flags if not already present.
  * Mutates commandArgs in-place.
  */
-function injectPortAndHostFlags(commandArgs: string[], port: number, strictPort: boolean): void {
+function injectPortAndHostFlags(
+  commandArgs: string[],
+  port: number,
+  strictPort: boolean,
+  framework?: string
+): void {
   if (!commandArgs.includes("--port")) {
     commandArgs.push("--port", port.toString());
     if (strictPort) {
@@ -650,6 +657,11 @@ function injectPortAndHostFlags(commandArgs: string[], port: number, strictPort:
 
   if (!commandArgs.includes("--host")) {
     commandArgs.push("--host", "127.0.0.1");
+  }
+
+  // React Native uses RCT_METRO_PORT env var for port configuration
+  if (framework === "react-native") {
+    process.env.RCT_METRO_PORT = port.toString();
   }
 }
 
@@ -677,13 +689,18 @@ export function injectFrameworkFlags(
 
   // Use manual framework if provided and valid
   if (manualFramework && FRAMEWORKS_NEEDING_PORT[manualFramework]) {
-    injectPortAndHostFlags(commandArgs, port, FRAMEWORKS_NEEDING_PORT[manualFramework].strictPort);
+    injectPortAndHostFlags(
+      commandArgs,
+      port,
+      FRAMEWORKS_NEEDING_PORT[manualFramework].strictPort,
+      manualFramework
+    );
     return;
   }
 
   const framework = resolveFramework(commandArgs);
   if (framework) {
-    injectPortAndHostFlags(commandArgs, port, framework.strictPort);
+    injectPortAndHostFlags(commandArgs, port, framework.strictPort, framework.name);
   }
 }
 

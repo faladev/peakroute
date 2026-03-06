@@ -15,11 +15,46 @@
 
 - **Expo and React Native framework support**: Added automatic framework detection and port injection for Expo and React Native projects. React Native also sets `RCT_METRO_PORT` environment variable for Metro bundler compatibility.
 
-- **`--app-port` flag and `PEAKROUTE_APP_PORT` environment variable**: Specify a specific port for your app instead of auto-finding one. Useful when your app needs a fixed port.
+  ```bash
+  peakroute myapp expo start
+  peakroute myapp react-native start
+  ```
+
+- **Expo and React Native framework support**: Added automatic `--port` and `--host` flag injection for Expo and React Native projects. React Native also receives `RCT_METRO_PORT` environment variable for Metro bundler compatibility.
 
   ```bash
-  peakroute myapp --app-port 3000 next dev
-  PEAKROUTE_APP_PORT=3000 peakroute myapp next dev
+  # Expo projects
+  peakroute myapp expo start
+
+  # React Native projects
+  peakroute myapp react-native start
+
+  ```
+
+- **Multi-distribution Linux CA trust support**: The `trust` command now supports multiple Linux distributions:
+  - **Debian/Ubuntu**: `/usr/local/share/ca-certificates/` + `update-ca-certificates`
+  - **Fedora/RHEL/CentOS/Rocky/Alma**: `/etc/pki/ca-trust/source/anchors/` + `update-ca-trust extract`
+  - **Arch Linux**: `/etc/ca-certificates/trust-source/anchors/` + `update-ca-trust`
+  - **openSUSE**: `/etc/pki/trust/anchors/` + `update-ca-certificates`
+
+  Detection uses `/etc/os-release` with fallback to command availability.
+
+- **Wildcard subdomain routing**: Routes now support wildcard matching. If an exact match is not found, the proxy progressively removes subdomains from the left until a match is found.
+
+  Example: A request to `tenant.myapp.localhost` will match:
+  1. `tenant.myapp.localhost` (exact match)
+  2. `myapp.localhost` (wildcard match)
+  3. `localhost` (root match)
+
+  This enables multi-tenant applications to work with a single registered route.
+
+- **Wildcard subdomain routing**: The proxy now supports wildcard subdomain matching. Requests to `tenant.myapp.localhost` will fall back to `myapp.localhost` if no exact match is found. This enables multi-tenant development setups where subdomains are dynamically created.
+
+  Example:
+
+  ```bash
+  peakroute myapp next dev  # Registers myapp.localhost
+  # tenant.myapp.localhost automatically routes to the same app
   ```
 
 ## 0.5.8
