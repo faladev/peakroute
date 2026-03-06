@@ -6,6 +6,23 @@
 
 - **`PEAKROUTE_URL` environment variable**: Child processes now receive `PEAKROUTE_URL` containing the public `.localhost` URL (e.g., `http://myapp.localhost:1355`). This allows apps to self-reference without hardcoding the URL.
 
+- **Expo and React Native framework support**: Added automatic framework detection and port injection for Expo and React Native projects. React Native also sets `RCT_METRO_PORT` environment variable for Metro bundler compatibility.
+
+  ```bash
+  peakroute myapp expo start
+  peakroute myapp react-native start
+  ```
+
+- **Expo and React Native framework support**: Added automatic `--port` and `--host` flag injection for Expo and React Native projects. React Native also receives `RCT_METRO_PORT` environment variable for Metro bundler compatibility.
+
+  ```bash
+  # Expo projects
+  peakroute myapp expo start
+
+  # React Native projects
+  peakroute myapp react-native start
+  ```
+
 ## 0.5.8
 
 ### Features
