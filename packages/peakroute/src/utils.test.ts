@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { escapeHtml, formatUrl, isErrnoException, parseHostname } from "./utils.js";
+import {
+  escapeHtml,
+  formatUrl,
+  isErrnoException,
+  parseHostname,
+  sanitizeBranchName,
+} from "./utils.js";
 
 describe("escapeHtml", () => {
   it("escapes angle brackets", () => {
@@ -140,5 +146,59 @@ describe("parseHostname", () => {
 
   it("handles protocol with .localhost already present", () => {
     expect(parseHostname("https://test.localhost")).toBe("test.localhost");
+  });
+});
+
+describe("sanitizeBranchName", () => {
+  it("replaces slashes with hyphens", () => {
+    expect(sanitizeBranchName("feat/login")).toBe("feat-login");
+    expect(sanitizeBranchName("feature/new-auth")).toBe("feature-new-auth");
+  });
+
+  it("removes invalid characters", () => {
+    expect(sanitizeBranchName("feature/test_123")).toBe("feature-test123");
+    expect(sanitizeBranchName("bugfix/issue#42")).toBe("bugfix-issue42");
+    expect(sanitizeBranchName("chore:setup")).toBe("choresetup");
+  });
+
+  it("handles branch names with dots", () => {
+    expect(sanitizeBranchName("release/v1.0.0")).toBe("release-v100");
+  });
+
+  it("returns empty string for only invalid chars", () => {
+    expect(sanitizeBranchName("_@#")).toBe("");
+  });
+
+  it("preserves valid branch names", () => {
+    expect(sanitizeBranchName("main")).toBe("main");
+    expect(sanitizeBranchName("feature-login")).toBe("feature-login");
+    expect(sanitizeBranchName("fix-123")).toBe("fix-123");
+  });
+});
+
+describe("sanitizeBranchName", () => {
+  it("replaces slashes with hyphens", () => {
+    expect(sanitizeBranchName("feat/login")).toBe("feat-login");
+    expect(sanitizeBranchName("feature/new-auth")).toBe("feature-new-auth");
+  });
+
+  it("removes invalid characters", () => {
+    expect(sanitizeBranchName("feature/test_123")).toBe("feature-test123");
+    expect(sanitizeBranchName("bugfix/issue#42")).toBe("bugfix-issue42");
+    expect(sanitizeBranchName("chore:setup")).toBe("choresetup");
+  });
+
+  it("handles branch names with dots", () => {
+    expect(sanitizeBranchName("release/v1.0.0")).toBe("release-v100");
+  });
+
+  it("returns empty string for only invalid chars", () => {
+    expect(sanitizeBranchName("_@#")).toBe("");
+  });
+
+  it("preserves valid branch names", () => {
+    expect(sanitizeBranchName("main")).toBe("main");
+    expect(sanitizeBranchName("feature-login")).toBe("feature-login");
+    expect(sanitizeBranchName("fix-123")).toBe("fix-123");
   });
 });

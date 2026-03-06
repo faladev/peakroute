@@ -1,4 +1,5 @@
 import * as fs from "node:fs";
+import { execSync } from "node:child_process";
 import { IS_WINDOWS } from "./platform.js";
 
 /**
@@ -79,8 +80,48 @@ export function formatUrl(hostname: string, proxyPort: number, tls = false): str
 }
 
 /**
+ * Detect if we're in a git worktree and return the branch name.
+ * Returns null if not in a worktree or if git is not available.
+ */
+export function detectGitWorktree(): string | null {
+  try {
+    // Check if we're in a git repo
+    const gitDir = execSync("git rev-parse --git-dir", {
+      encoding: "utf-8",
+      stdio: ["pipe", "pipe", "ignore"],
+    }).trim();
+
+    // Check if this is a worktree (not the main repo)
+    // Worktrees have .git pointing to <main-repo>/.git/worktrees/<name>
+    const isWorktree = gitDir.includes("/worktrees/") || gitDir.includes("\\worktrees\\");
+    if (!isWorktree) return null;
+
+    // Get branch name
+    const branch = execSync("git rev-parse --abbrev-ref HEAD", {
+      encoding: "utf-8",
+      stdio: ["pipe", "pipe", "ignore"],
+    }).trim();
+
+    return branch || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Sanitize branch name for use in hostname.
+ * Replaces / with - and removes invalid characters.
+ */
+export function sanitizeBranchName(branch: string): string {
+  return branch
+    .replace(/\//g, "-") // feat/login -> feat-login
+    .replace(/[^a-zA-Z0-9-]/g, ""); // remove invalid characters
+}
+
+/**
  * Parse and normalize a hostname input for use as a .localhost subdomain.
  * Strips protocol prefixes, validates characters, and appends .localhost if needed.
+ * When in a git worktree, prepends the branch name as a subdomain prefix.
  */
 export function parseHostname(input: string): string {
   // Remove any protocol prefix
@@ -95,8 +136,17 @@ export function parseHostname(input: string): string {
     throw new Error("Hostname cannot be empty");
   }
 
-  // Add .localhost if not present
-  if (!hostname.endsWith(".localhost")) {
+  // Check if already has .localhost - if so, don't modify further
+  if (hostname.endsWith(".localhost")) {
+    return hostname;
+  }
+
+  // Detect git worktree and prepend branch name
+  const branch = detectGitWorktree();
+  if (branch) {
+    const sanitized = sanitizeBranchName(branch);
+    hostname = `${sanitized}.${hostname}.localhost`;
+  } else {
     hostname = `${hostname}.localhost`;
   }
 
