@@ -349,13 +349,125 @@ function loginKeychainPath(): string {
   return path.join(home, "Library", "Keychains", "login.keychain-db");
 }
 
+// ---------------------------------------------------------------------------
+// Linux distribution detection
+// ---------------------------------------------------------------------------
+
+type LinuxDistro = "debian" | "fedora" | "arch" | "opensuse" | "unknown";
+
+interface LinuxCertConfig {
+  certDir: string;
+  certFilename: string;
+  updateCommand: string[];
+  updateCommandWindowsHide?: boolean;
+}
+
+/**
+ * Detect the Linux distribution by reading /etc/os-release.
+ * Falls back to command detection if /etc/os-release is not available.
+ */
+function detectLinuxDistro(): LinuxDistro {
+  try {
+    const osRelease = fs.readFileSync("/etc/os-release", "utf-8");
+    const idMatch = osRelease.match(/^ID=(.+)$/m);
+    const idLikeMatch = osRelease.match(/^ID_LIKE=(.+)$/m);
+
+    const id = idMatch?.[1]?.toLowerCase().replace(/"/g, "");
+    const idLike = idLikeMatch?.[1]?.toLowerCase().replace(/"/g, "");
+
+    // Check ID first
+    if (id) {
+      if (id === "debian" || id === "ubuntu" || id === "linuxmint" || id === "pop") {
+        return "debian";
+      }
+      if (
+        id === "fedora" ||
+        id === "rhel" ||
+        id === "centos" ||
+        id === "rocky" ||
+        id === "almalinux"
+      ) {
+        return "fedora";
+      }
+      if (id === "arch" || id === "manjaro" || id === "endeavouros") {
+        return "arch";
+      }
+      if (id === "opensuse" || id === "opensuse-leap" || id === "opensuse-tumbleweed") {
+        return "opensuse";
+      }
+    }
+
+    // Check ID_LIKE as fallback
+    if (idLike) {
+      if (idLike.includes("debian")) return "debian";
+      if (idLike.includes("fedora") || idLike.includes("rhel")) return "fedora";
+      if (idLike.includes("arch")) return "arch";
+      if (idLike.includes("suse")) return "opensuse";
+    }
+  } catch {
+    // /etc/os-release not available, fall back to command detection
+  }
+
+  // Fallback: detect by command availability
+  try {
+    execFileSync("which", ["update-ca-certificates"], { stdio: "pipe" });
+    return "debian";
+  } catch {
+    // Not debian-based
+  }
+
+  try {
+    execFileSync("which", ["update-ca-trust"], { stdio: "pipe" });
+    return "fedora";
+  } catch {
+    // Not fedora-based
+  }
+
+  return "unknown";
+}
+
+/**
+ * Get certificate configuration for a Linux distribution.
+ */
+function getLinuxCertConfig(distro: LinuxDistro): LinuxCertConfig {
+  switch (distro) {
+    case "fedora":
+      return {
+        certDir: "/etc/pki/ca-trust/source/anchors",
+        certFilename: "peakroute-ca.crt",
+        updateCommand: ["update-ca-trust", "extract"],
+      };
+    case "arch":
+      return {
+        certDir: "/etc/ca-certificates/trust-source/anchors",
+        certFilename: "peakroute-ca.crt",
+        updateCommand: ["update-ca-trust"],
+      };
+    case "opensuse":
+      return {
+        certDir: "/etc/pki/trust/anchors",
+        certFilename: "peakroute-ca.crt",
+        updateCommand: ["update-ca-certificates"],
+      };
+    case "debian":
+    default:
+      return {
+        certDir: "/usr/local/share/ca-certificates",
+        certFilename: "peakroute-ca.crt",
+        updateCommand: ["update-ca-certificates"],
+      };
+  }
+}
+
 /**
  * Check if the CA is trusted on Linux.
- * Uses the Debian/Ubuntu path (/usr/local/share/ca-certificates/).
- * Fedora/RHEL use /etc/pki/ca-trust/source/anchors/ which is not supported yet.
+ * Supports Debian/Ubuntu, Fedora/RHEL/CentOS/Rocky/Alma, Arch, and openSUSE.
  */
 function isCATrustedLinux(stateDir: string): boolean {
-  const systemCertPath = `/usr/local/share/ca-certificates/peakroute-ca.crt`;
+  const distro = detectLinuxDistro();
+  const config = getLinuxCertConfig(distro);
+  const systemCertPath = path.join(config.certDir, config.certFilename);
+
   if (!fileExists(systemCertPath)) return false;
 
   // Compare our CA with the installed one
@@ -635,9 +747,20 @@ export function trustCA(stateDir: string): { trusted: boolean; error?: string } 
       );
       return { trusted: true };
     } else if (process.platform === "linux") {
-      const dest = "/usr/local/share/ca-certificates/peakroute-ca.crt";
+      const distro = detectLinuxDistro();
+      const config = getLinuxCertConfig(distro);
+      const dest = path.join(config.certDir, config.certFilename);
+
+      // Ensure the certificate directory exists
+      if (!fs.existsSync(config.certDir)) {
+        fs.mkdirSync(config.certDir, { recursive: true });
+      }
+
       fs.copyFileSync(caCertPath, dest);
-      execFileSync("update-ca-certificates", [], { stdio: "pipe", timeout: 30_000 });
+      execFileSync(config.updateCommand[0], config.updateCommand.slice(1), {
+        stdio: "pipe",
+        timeout: 30_000,
+      });
       return { trusted: true };
     } else if (IS_WINDOWS) {
       trustCAWindows(caCertPath);

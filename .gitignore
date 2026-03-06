@@ -16,3 +16,9 @@ apps/**/bun.lock
 # Ignore nested bun.lock files (root bun.lock is sufficient)
 **/bun.lock
 !bun.lock
+
+# Claude local settings
+.claude/
+
+# Claude settings
+.claude/
