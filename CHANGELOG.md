@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.0 (Unreleased)
+
+### Features
+
+- **`PEAKROUTE_URL` environment variable**: Child processes now receive `PEAKROUTE_URL` containing the public `.localhost` URL (e.g., `http://myapp.localhost:1355`). This allows apps to self-reference without hardcoding the URL.
+
 ## 0.5.8
 
 ### Features
