@@ -13,6 +13,24 @@
   - **openSUSE**: `/etc/pki/trust/anchors/` + `update-ca-certificates`
 
   Detection uses `/etc/os-release` with fallback to command availability.
+  
+- **Wildcard subdomain routing**: Routes now support wildcard matching. If an exact match is not found, the proxy progressively removes subdomains from the left until a match is found.
+
+  Example: A request to `tenant.myapp.localhost` will match:
+  1. `tenant.myapp.localhost` (exact match)
+  2. `myapp.localhost` (wildcard match)
+  3. `localhost` (root match)
+
+  This enables multi-tenant applications to work with a single registered route.
+
+- **Wildcard subdomain routing**: The proxy now supports wildcard subdomain matching. Requests to `tenant.myapp.localhost` will fall back to `myapp.localhost` if no exact match is found. This enables multi-tenant development setups where subdomains are dynamically created.
+
+  Example:
+
+  ```bash
+  peakroute myapp next dev  # Registers myapp.localhost
+  # tenant.myapp.localhost automatically routes to the same app
+  ```
 
 ## 0.5.8
 

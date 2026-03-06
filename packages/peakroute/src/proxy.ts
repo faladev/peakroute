@@ -1,8 +1,39 @@
 import * as http from "node:http";
 import * as http2 from "node:http2";
 import * as net from "node:net";
-import type { ProxyServerOptions } from "./types.js";
+import type { ProxyServerOptions, RouteInfo } from "./types.js";
 import { escapeHtml, formatUrl } from "./utils.js";
+
+/**
+ * Find a route for the given host, supporting wildcard subdomain matching.
+ *
+ * First tries an exact match. If no exact match is found, progressively
+ * removes subdomains from the left and tries to match the remaining domain.
+ *
+ * Example: For "tenant.myapp.localhost", tries:
+ *   1. "tenant.myapp.localhost" (exact)
+ *   2. "myapp.localhost" (wildcard)
+ *   3. "localhost" (root)
+ *
+ * Returns null if no route is found.
+ */
+function findRoute(routes: RouteInfo[], host: string): RouteInfo | null {
+  // Exact match has priority
+  const exact = routes.find((r) => r.hostname === host);
+  if (exact) return exact;
+
+  // Wildcard: remove segments from the left
+  const parts = host.split(".");
+  while (parts.length > 2) {
+    // Maintain at least x.y (e.g., "localhost" would be invalid)
+    parts.shift();
+    const wildcard = parts.join(".");
+    const match = routes.find((r) => r.hostname === wildcard);
+    if (match) return match;
+  }
+
+  return null;
+}
 
 /** Response header used to identify a peakroute proxy (for health checks). */
 export const PEAKROUTE_HEADER = "X-Peakroute";
@@ -121,7 +152,7 @@ export function createProxyServer(options: ProxyServerOptions): ProxyServer {
       return;
     }
 
-    const route = routes.find((r) => r.hostname === host);
+    const route = findRoute(routes, host);
 
     if (!route) {
       const safeHost = escapeHtml(host);
@@ -231,7 +262,7 @@ export function createProxyServer(options: ProxyServerOptions): ProxyServer {
 
     const routes = getRoutes();
     const host = getRequestHost(req).split(":")[0];
-    const route = routes.find((r) => r.hostname === host);
+    const route = findRoute(routes, host);
 
     if (!route) {
       socket.destroy();
