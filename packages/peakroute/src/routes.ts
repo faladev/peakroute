@@ -171,6 +171,9 @@ export class RouteStore {
    * is no longer alive. Stale-route cleanup is only persisted when the caller
    * already holds the lock (i.e. inside addRoute/removeRoute) to avoid
    * unprotected concurrent writes.
+   *
+   * Note: Routes with pid=0 are considered external (e.g., Docker containers)
+   * and are never filtered out as stale.
    */
   loadRoutes(persistCleanup = false): RouteMapping[] {
     if (!fs.existsSync(this.routesPath)) {
@@ -191,7 +194,8 @@ export class RouteStore {
       }
       const routes: RouteMapping[] = parsed.filter(isValidRoute);
       // Filter out stale routes whose owning process is no longer alive
-      const alive = routes.filter((r) => this.isProcessAlive(r.pid));
+      // pid=0 is a sentinel for external routes (e.g., Docker) - never stale
+      const alive = routes.filter((r) => r.pid === 0 || this.isProcessAlive(r.pid));
       if (persistCleanup && alive.length !== routes.length) {
         // Persist the cleaned-up list so stale entries don't accumulate.
         // Only safe when caller holds the lock.
@@ -240,6 +244,29 @@ export class RouteStore {
     }
     try {
       const routes = this.loadRoutes(true).filter((r) => r.hostname !== hostname);
+      this.saveRoutes(routes);
+    } finally {
+      this.releaseLock();
+    }
+  }
+
+  /**
+   * Register an alias for an external service (e.g., Docker container).
+   * Uses pid=0 as a sentinel to indicate the route is not managed by
+   * a child process and should never be cleaned up as "stale".
+   */
+  addAlias(hostname: string, port: number): void {
+    this.ensureDir();
+    if (!this.acquireLock()) {
+      throw new Error("Failed to acquire route lock");
+    }
+    try {
+      const routes = this.loadRoutes(true);
+      const existing = routes.find((r) => r.hostname === hostname);
+      if (existing) {
+        throw new Error(`Hostname "${hostname}" is already registered`);
+      }
+      routes.push({ hostname, port, pid: 0 }); // pid=0 = external
       this.saveRoutes(routes);
     } finally {
       this.releaseLock();
