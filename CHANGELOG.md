@@ -4,6 +4,18 @@
 
 ### Features
 
+- **Git Worktree integration**: When running inside a git worktree, the branch name is automatically prepended as a subdomain prefix. Each worktree gets a unique URL with no configuration changes needed.
+
+  ```bash
+  # In a worktree on branch feat/login
+  peakroute myapp next dev
+  # -> http://feat-login.myapp.localhost:1355
+
+  # In a worktree on branch fix/auth-bug
+  peakroute api next dev
+  # -> http://fix-auth-bug.api.localhost:1355
+  ```
+
 - **`peakroute alias` command**: Register routes for external services not spawned by peakroute (e.g., Docker containers with published ports). Aliases use `pid=0` as a sentinel and are never cleaned up as stale.
 
   ```bash
@@ -16,6 +28,18 @@
   # List shows [external] indicator
   peakroute list
   # http://mydocker.localhost:1355 -> localhost:8080 (pid 0) [external]
+  ```
+
+- **Git Worktree integration**: When running inside a Git worktree, the branch name is automatically prepended as a subdomain prefix. Each worktree gets a unique URL without configuration changes.
+
+  ```bash
+  # In a worktree on branch 'feat/login'
+  peakroute myapp next dev
+  # -> http://feat-login.myapp.localhost:1355
+
+  # In a worktree on branch 'fix/auth-bug'
+  peakroute myapp next dev
+  # -> http://fix-auth-bug.myapp.localhost:1355
   ```
 
 - **`PEAKROUTE_URL` environment variable**: Child processes now receive `PEAKROUTE_URL` containing the public `.localhost` URL (e.g., `http://myapp.localhost:1355`). This allows apps to self-reference without hardcoding the URL.
