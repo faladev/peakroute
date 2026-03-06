@@ -4,6 +4,20 @@
 
 ### Features
 
+- **`peakroute alias` command**: Register routes for external services not spawned by peakroute (e.g., Docker containers with published ports). Aliases use `pid=0` as a sentinel and are never cleaned up as stale.
+
+  ```bash
+  # Register an external service
+  peakroute alias mydocker.localhost 8080
+
+  # Remove an alias
+  peakroute alias remove mydocker.localhost
+
+  # List shows [external] indicator
+  peakroute list
+  # http://mydocker.localhost:1355 -> localhost:8080 (pid 0) [external]
+  ```
+
 - **`PEAKROUTE_URL` environment variable**: Child processes now receive `PEAKROUTE_URL` containing the public `.localhost` URL (e.g., `http://myapp.localhost:1355`). This allows apps to self-reference without hardcoding the URL.
 
 - **`--app-port` flag and `PEAKROUTE_APP_PORT` environment variable**: Specify a specific port for your app instead of auto-finding one. Useful when your app needs a fixed port.

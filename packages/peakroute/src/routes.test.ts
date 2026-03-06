@@ -226,4 +226,48 @@ describe("RouteStore", () => {
       expect(routes[0].hostname).toBe("test.localhost");
     });
   });
+
+  describe("addAlias", () => {
+    it("registers route with pid=0 (external/persistent)", () => {
+      store.addAlias("docker.localhost", 8080);
+      const routes = store.loadRoutes();
+      expect(routes).toHaveLength(1);
+      expect(routes[0]).toEqual({
+        hostname: "docker.localhost",
+        port: 8080,
+        pid: 0,
+      });
+    });
+
+    it("preserves pid=0 routes during stale cleanup", () => {
+      store.addAlias("docker.localhost", 8080);
+      // Load with persistCleanup=true should still keep pid=0 routes
+      const routes = store.loadRoutes(true);
+      expect(routes).toHaveLength(1);
+      expect(routes[0].hostname).toBe("docker.localhost");
+    });
+
+    it("throws when hostname already exists", () => {
+      store.addAlias("docker.localhost", 8080);
+      expect(() => store.addAlias("docker.localhost", 9090)).toThrow(
+        'Hostname "docker.localhost" is already registered'
+      );
+    });
+
+    it("allows multiple aliases with different hostnames", () => {
+      store.addAlias("docker1.localhost", 8080);
+      store.addAlias("docker2.localhost", 9090);
+      const routes = store.loadRoutes();
+      expect(routes).toHaveLength(2);
+      const ports = routes.map((r) => r.port).sort();
+      expect(ports).toEqual([8080, 9090]);
+    });
+
+    it("can be removed with removeRoute", () => {
+      store.addAlias("docker.localhost", 8080);
+      store.removeRoute("docker.localhost");
+      const routes = store.loadRoutes();
+      expect(routes).toHaveLength(0);
+    });
+  });
 });

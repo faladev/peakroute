@@ -348,8 +348,9 @@ function listRoutes(store: RouteStore, proxyPort: number, tls: boolean): void {
   console.log(chalk.blue.bold("\nActive routes:\n"));
   for (const route of routes) {
     const url = formatUrl(route.hostname, proxyPort, tls);
+    const externalIndicator = route.pid === 0 ? chalk.gray(" [external]") : "";
     console.log(
-      `  ${chalk.cyan(url)}  ${chalk.gray("->")}  ${chalk.white(`localhost:${route.port}`)}  ${chalk.gray(`(pid ${route.pid})`)}`
+      `  ${chalk.cyan(url)}  ${chalk.gray("->")}  ${chalk.white(`localhost:${route.port}`)}  ${chalk.gray(`(pid ${route.pid})`)}${externalIndicator}`
     );
   }
   console.log();
@@ -590,6 +591,8 @@ ${chalk.bold("Usage:")}
   ${chalk.cyan("peakroute <name> <cmd>")}            Run your app through the proxy
   ${chalk.cyan("peakroute list")}                    Show active routes
   ${chalk.cyan("peakroute trust")}                   Add local CA to system trust store
+  ${chalk.cyan("peakroute alias \u003chost\u003e \u003cport\u003e")}    Register a route for external services (e.g. Docker)
+  ${chalk.cyan("peakroute alias remove \u003chost\u003e")}     Remove an external route
 
 ${chalk.bold("Examples:")}
   peakroute proxy start                # Start proxy on port 1355
@@ -677,6 +680,62 @@ ${chalk.bold("Skip peakroute:")}
       onWarning: (msg) => console.warn(chalk.yellow(msg)),
     });
     listRoutes(store, port, tls);
+    return;
+  }
+
+  // Alias commands (for external services like Docker)
+  if (args[0] === "alias") {
+    const { dir } = await discoverState();
+    const store = new RouteStore(dir, {
+      onWarning: (msg) => console.warn(chalk.yellow(msg)),
+    });
+
+    if (args[1] === "remove") {
+      const hostname = args[2];
+      if (!hostname) {
+        console.error(chalk.red("Error: Missing hostname."));
+        console.error(chalk.blue("Usage:"));
+        console.error(chalk.cyan("  peakroute alias remove <hostname>"));
+        process.exit(1);
+      }
+      try {
+        store.removeRoute(parseHostname(hostname));
+        console.log(chalk.green(`Alias removed: ${hostname}`));
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error(chalk.red(`Failed to remove alias: ${message}`));
+        process.exit(1);
+      }
+      return;
+    }
+
+    // Add alias: peakroute alias <hostname> <port>
+    const hostname = args[1];
+    const portStr = args[2];
+
+    if (!hostname || !portStr) {
+      console.error(chalk.red("Error: Missing arguments."));
+      console.error(chalk.blue("Usage:"));
+      console.error(chalk.cyan("  peakroute alias <hostname> <port>"));
+      console.error(chalk.cyan("  peakroute alias remove <hostname>"));
+      process.exit(1);
+    }
+
+    const portNum = parseInt(portStr, 10);
+    if (isNaN(portNum) || portNum < 1 || portNum > 65535) {
+      console.error(chalk.red(`Error: Invalid port number: ${portStr}`));
+      console.error(chalk.blue("Port must be between 1 and 65535."));
+      process.exit(1);
+    }
+
+    try {
+      store.addAlias(parseHostname(hostname), portNum);
+      console.log(chalk.green(`Alias registered: ${hostname} -> localhost:${portNum}`));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(chalk.red(`Failed to register alias: ${message}`));
+      process.exit(1);
+    }
     return;
   }
 
