@@ -22,6 +22,8 @@
   # React Native projects
   peakroute myapp react-native start
 
+  ```
+
 - **Multi-distribution Linux CA trust support**: The `trust` command now supports multiple Linux distributions:
   - **Debian/Ubuntu**: `/usr/local/share/ca-certificates/` + `update-ca-certificates`
   - **Fedora/RHEL/CentOS/Rocky/Alma**: `/etc/pki/ca-trust/source/anchors/` + `update-ca-trust extract`
