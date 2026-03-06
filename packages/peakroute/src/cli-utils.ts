@@ -178,8 +178,24 @@ export async function discoverState(): Promise<{ dir: string; port: number; tls:
 // ---------------------------------------------------------------------------
 
 /**
+ * Check if a port is available (free to bind).
+ */
+export function isPortAvailable(port: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const server = net.createServer();
+    server.listen(port, () => {
+      server.close(() => resolve(true));
+    });
+    server.on("error", () => resolve(false));
+  });
+}
+
+/**
  * Find a free port in the given range (default 4000-4999).
  * Tries random ports first for speed, then falls back to sequential scan.
+ *
+ * If preferredPort is specified, tries that port first. If it's occupied,
+ * throws an error.
  *
  * Note: There is an inherent TOCTOU race between verifying a port is free
  * and the child process actually binding to it. The random-first strategy
@@ -187,8 +203,17 @@ export async function discoverState(): Promise<{ dir: string; port: number; tls:
  */
 export async function findFreePort(
   minPort = MIN_APP_PORT,
-  maxPort = MAX_APP_PORT
+  maxPort = MAX_APP_PORT,
+  preferredPort?: number
 ): Promise<number> {
+  // If a preferred port is specified, try it first
+  if (preferredPort !== undefined) {
+    if (await isPortAvailable(preferredPort)) {
+      return preferredPort;
+    }
+    throw new Error(`Port ${preferredPort} is already in use`);
+  }
+
   if (minPort > maxPort) {
     throw new Error(`minPort (${minPort}) must be <= maxPort (${maxPort})`);
   }
