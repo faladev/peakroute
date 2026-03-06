@@ -1,6 +1,6 @@
 {
   "name": "peakroute",
-  "version": "0.5.8",
+  "version": "0.6.0",
   "description": "Replace port numbers with stable, named .localhost URLs. For humans and agents. (Formerly portless)",
   "type": "module",
   "main": "./dist/index.js",
