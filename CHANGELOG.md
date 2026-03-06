@@ -6,6 +6,14 @@
 
 - **`PEAKROUTE_URL` environment variable**: Child processes now receive `PEAKROUTE_URL` containing the public `.localhost` URL (e.g., `http://myapp.localhost:1355`). This allows apps to self-reference without hardcoding the URL.
 
+- **Multi-distribution Linux CA trust support**: The `trust` command now supports multiple Linux distributions:
+  - **Debian/Ubuntu**: `/usr/local/share/ca-certificates/` + `update-ca-certificates`
+  - **Fedora/RHEL/CentOS/Rocky/Alma**: `/etc/pki/ca-trust/source/anchors/` + `update-ca-trust extract`
+  - **Arch Linux**: `/etc/ca-certificates/trust-source/anchors/` + `update-ca-trust`
+  - **openSUSE**: `/etc/pki/trust/anchors/` + `update-ca-certificates`
+
+  Detection uses `/etc/os-release` with fallback to command availability.
+
 ## 0.5.8
 
 ### Features
