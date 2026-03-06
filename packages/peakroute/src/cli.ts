@@ -363,7 +363,8 @@ async function runApp(
   commandArgs: string[],
   tls: boolean,
   force: boolean,
-  inject: boolean
+  inject: boolean,
+  preferredAppPort?: number
 ) {
   const hostname = parseHostname(name);
 
@@ -477,8 +478,8 @@ async function runApp(
     console.log(chalk.gray("-- Proxy is running"));
   }
 
-  // Find a free port
-  const port = await findFreePort();
+  // Find a free port (or use preferred if specified)
+  const port = await findFreePort(undefined, undefined, preferredAppPort);
   console.log(chalk.green(`-- Using port ${port}`));
 
   // Register route
@@ -627,9 +628,11 @@ ${chalk.bold("Options:")}
   --foreground                  Run proxy in foreground (for debugging)
   --force                       Override an existing route registered by another process
   --inject                      Force injection of --port and --host flags (when auto-detection fails)
+  --app-port <number>           Use a specific port for the app (instead of auto-finding one)
 
 ${chalk.bold("Environment variables:")}
   PEAKROUTE_PORT=<number>        Override the default proxy port (e.g. in .bashrc)
+  PEAKROUTE_APP_PORT=<number>    Use a specific port for the app (alternative to --app-port)
   PEAKROUTE_HTTPS=1              Always enable HTTPS (set in .bashrc / .zshrc)
   PEAKROUTE_STATE_DIR=<path>     Override the state directory
   PEAKROUTE=0 | PEAKROUTE=skip    Run command directly without proxy
@@ -923,16 +926,51 @@ ${chalk.bold("Usage: peakroute proxy <command>")}
     return;
   }
 
-  // Run app -- only recognize --force before the command (position 0 or 1)
+  // Parse flags that appear before the command
+  const parsedFlags = new Set<number>();
+
+  // --force flag
   const forceIdx = args.indexOf("--force");
   const force = forceIdx >= 0 && forceIdx <= 1;
+  if (force) parsedFlags.add(forceIdx);
 
-  // Check for --inject flag to force framework injection
+  // --inject flag
   const injectIdx = args.indexOf("--inject");
   const injectFlag = injectIdx >= 0 && injectIdx <= 1;
+  if (injectFlag) parsedFlags.add(injectIdx);
+
+  // --app-port flag
+  let preferredAppPort: number | undefined;
+  const appPortIdx = args.indexOf("--app-port");
+  if (appPortIdx >= 0 && appPortIdx <= 1) {
+    const portValue = args[appPortIdx + 1];
+    if (!portValue || portValue.startsWith("-")) {
+      console.error(chalk.red("Error: --app-port requires a port number."));
+      console.error(chalk.blue("Usage:"));
+      console.error(chalk.cyan("  peakroute myapp --app-port 3000 next dev"));
+      process.exit(1);
+    }
+    const parsedPort = parseInt(portValue, 10);
+    if (isNaN(parsedPort) || parsedPort < 1 || parsedPort > 65535) {
+      console.error(chalk.red(`Error: Invalid port number: ${portValue}`));
+      console.error(chalk.blue("Port must be between 1 and 65535."));
+      process.exit(1);
+    }
+    preferredAppPort = parsedPort;
+    parsedFlags.add(appPortIdx);
+    parsedFlags.add(appPortIdx + 1);
+  }
+
+  // Check for PEAKROUTE_APP_PORT environment variable
+  if (preferredAppPort === undefined && process.env.PEAKROUTE_APP_PORT) {
+    const envPort = parseInt(process.env.PEAKROUTE_APP_PORT, 10);
+    if (!isNaN(envPort) && envPort >= 1 && envPort <= 65535) {
+      preferredAppPort = envPort;
+    }
+  }
 
   // Remove flags from args before processing
-  const appArgs = args.filter((_, i) => i !== forceIdx && i !== injectIdx);
+  const appArgs = args.filter((_, i) => !parsedFlags.has(i));
   const name = appArgs[0];
   const commandArgs = appArgs.slice(1);
 
@@ -949,7 +987,7 @@ ${chalk.bold("Usage: peakroute proxy <command>")}
   const store = new RouteStore(dir, {
     onWarning: (msg) => console.warn(chalk.yellow(msg)),
   });
-  await runApp(store, port, dir, name, commandArgs, tls, force, injectFlag);
+  await runApp(store, port, dir, name, commandArgs, tls, force, injectFlag, preferredAppPort);
 }
 
 main().catch((err: unknown) => {
