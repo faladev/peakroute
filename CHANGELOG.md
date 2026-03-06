@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.6.0 (Unreleased)
+## 0.6.0 (2025-03-06)
 
 ### Features
 
@@ -30,18 +30,6 @@
   # http://mydocker.localhost:1355 -> localhost:8080 (pid 0) [external]
   ```
 
-- **Git Worktree integration**: When running inside a Git worktree, the branch name is automatically prepended as a subdomain prefix. Each worktree gets a unique URL without configuration changes.
-
-  ```bash
-  # In a worktree on branch 'feat/login'
-  peakroute myapp next dev
-  # -> http://feat-login.myapp.localhost:1355
-
-  # In a worktree on branch 'fix/auth-bug'
-  peakroute myapp next dev
-  # -> http://fix-auth-bug.myapp.localhost:1355
-  ```
-
 - **`PEAKROUTE_URL` environment variable**: Child processes now receive `PEAKROUTE_URL` containing the public `.localhost` URL (e.g., `http://myapp.localhost:1355`). This allows apps to self-reference without hardcoding the URL.
 
 - **`--app-port` flag and `PEAKROUTE_APP_PORT` environment variable**: Specify a specific port for your app instead of auto-finding one. Useful when your app needs a fixed port.
@@ -54,19 +42,11 @@
 - **Expo and React Native framework support**: Added automatic framework detection and port injection for Expo and React Native projects. React Native also sets `RCT_METRO_PORT` environment variable for Metro bundler compatibility.
 
   ```bash
-  peakroute myapp expo start
-  peakroute myapp react-native start
-  ```
-
-- **Expo and React Native framework support**: Added automatic `--port` and `--host` flag injection for Expo and React Native projects. React Native also receives `RCT_METRO_PORT` environment variable for Metro bundler compatibility.
-
-  ```bash
   # Expo projects
   peakroute myapp expo start
 
   # React Native projects
   peakroute myapp react-native start
-
   ```
 
 - **Multi-distribution Linux CA trust support**: The `trust` command now supports multiple Linux distributions:
@@ -85,15 +65,6 @@
   3. `localhost` (root match)
 
   This enables multi-tenant applications to work with a single registered route.
-
-- **Wildcard subdomain routing**: The proxy now supports wildcard subdomain matching. Requests to `tenant.myapp.localhost` will fall back to `myapp.localhost` if no exact match is found. This enables multi-tenant development setups where subdomains are dynamically created.
-
-  Example:
-
-  ```bash
-  peakroute myapp next dev  # Registers myapp.localhost
-  # tenant.myapp.localhost automatically routes to the same app
-  ```
 
 ## 0.5.8
 
