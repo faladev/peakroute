@@ -507,6 +507,7 @@ async function runApp(
       ...process.env,
       PORT: port.toString(),
       HOST: "127.0.0.1",
+      PEAKROUTE_URL: finalUrl,
       __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS: ".localhost",
     },
     onCleanup: () => {

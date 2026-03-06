@@ -152,6 +152,9 @@ PEAKROUTE_HTTPS=1                 # Always enable HTTPS
 PEAKROUTE_STATE_DIR=<path>        # Override the state directory
 PEAKROUTE_NO_UPDATE_CHECK=1       # Disable update availability notifications
 
+# Environment variables set by peakroute
+PEAKROUTE_URL                     # The public .localhost URL (e.g., http://myapp.localhost:1355)
+
 # Info
 peakroute --help                  # Show help
 peakroute --version               # Show version
