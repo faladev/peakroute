@@ -187,6 +187,22 @@ peakroute list
 # -> http://mydocker.localhost:1355 -> localhost:3000 (pid 0) [external]
 ```
 
+## Git Worktree Support
+
+Peakroute automatically detects when you're running inside a [Git Worktree](https://git-scm.com/docs/git-worktree) and prepends the branch name as a subdomain prefix. This gives each worktree a unique URL without any configuration changes.
+
+```bash
+# In a worktree on branch feat/login
+peakroute myapp next dev
+# -> http://feat-login.myapp.localhost:1355
+
+# In a worktree on branch fix/auth-bug
+peakroute api next dev
+# -> http://fix-auth-bug.api.localhost:1355
+```
+
+The branch name is sanitized for use as a hostname (slashes become hyphens, invalid characters are removed).
+
 ## Development
 
 This repo is a Bun workspace monorepo using [Turborepo](https://turbo.build). The publishable package lives in `packages/peakroute/`.
