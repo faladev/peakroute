@@ -123,6 +123,8 @@ sudo peakroute trust
 peakroute <name> <cmd> [args...]  # Run app at http://<name>.localhost:1355
 peakroute list                    # Show active routes
 peakroute trust                   # Add local CA to system trust store
+peakroute alias <host> <port>    # Register external service (e.g., Docker)
+peakroute alias remove <host>     # Remove an external route
 
 # Disable peakroute (run command directly)
 PEAKROUTE=0 bun dev              # Bypasses proxy, uses default port
@@ -163,6 +165,27 @@ Peakroute stores its state (routes, PID file, port file) in a directory that dep
 - **Port >= 1024** (no sudo): `~/.peakroute` -- user-scoped, no root involvement
 
 Override with the `PEAKROUTE_STATE_DIR` environment variable if needed.
+
+## External Services (Docker, etc.)
+
+Use the `peakroute alias` command to register routes for services not spawned by peakroute, such as Docker containers or other external processes:
+
+```bash
+# Register a Docker container running on port 3000
+peakroute alias mydocker.localhost 3000
+
+# Now access it at http://mydocker.localhost:1355
+
+# Remove the alias when done
+peakroute alias remove mydocker.localhost
+```
+
+Aliases are marked with `[external]` in the route list and are never cleaned up as "stale" since they don't have an associated process PID.
+
+```bash
+peakroute list
+# -> http://mydocker.localhost:1355 -> localhost:3000 (pid 0) [external]
+```
 
 ## Development
 
